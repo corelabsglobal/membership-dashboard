@@ -32,17 +32,10 @@ export function AuthForm({ mode = 'login' }) {
           password
         })
         if (error) throw error
-        toast({
-          title: 'Check your email',
-          description: 'We sent you a confirmation link'
-        })
+        toast.success('Check your email, We sent you a confirmation link')
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive'
-      })
+      toast(error.message || 'Error')
     } finally {
       setLoading(false)
     }
