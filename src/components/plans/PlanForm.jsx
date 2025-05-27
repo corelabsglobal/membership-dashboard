@@ -42,18 +42,11 @@ export function PlanForm({ plan }) {
           .insert([formData])
         
         if (error) throw error
-        toast({
-          title: 'Plan created',
-          description: 'New membership plan has been created successfully',
-        })
+        toast.success('New membership plan has been created successfully')
       }
       router.push('/dashboard/plans')
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive'
-      })
+      toast(error.message || 'Error')
     }
   }
 
