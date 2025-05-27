@@ -46,19 +46,11 @@ export function CheckInForm() {
       setSubscription(activeSub)
       
       if (!activeSub) {
-        toast({
-          title: 'No active membership',
-          description: 'This member does not have an active subscription',
-          variant: 'destructive'
-        })
+        toast.error('This member does not have an active subscription')
       }
     } catch (error) {
       console.error('Error searching member:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to search for member',
-        variant: 'destructive'
-      })
+      toast.error('Failed to search for member')
     } finally {
       setLoading(false)
     }
@@ -89,10 +81,7 @@ export function CheckInForm() {
       
       if (sessionError) throw sessionError
       
-      toast({
-        title: 'Check-in successful',
-        description: `Session recorded. ${subscription.remaining_sessions - 1} sessions remaining.`,
-      })
+      toast.success(`Check-in successful. ${subscription.remaining_sessions - 1} sessions remaining.`)
       
       // Refresh subscription data
       const { data } = await supabase
@@ -104,11 +93,7 @@ export function CheckInForm() {
       setSubscription(data)
     } catch (error) {
       console.error('Error checking in:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to record check-in',
-        variant: 'destructive'
-      })
+      toast.error('Failed to record check-in')
     }
   }
 
