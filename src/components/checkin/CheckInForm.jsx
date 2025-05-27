@@ -16,7 +16,6 @@ export function CheckInForm() {
     
     setLoading(true)
     try {
-      // Search for member by name, email, or phone
       const { data, error } = await supabase
         .from('members')
         .select('*, subscriptions(*, membership_plans(*))')

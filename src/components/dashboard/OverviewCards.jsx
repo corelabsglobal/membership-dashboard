@@ -3,7 +3,6 @@ import { Users, Calendar, CreditCard, Activity } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export async function OverviewCards() {
-  // Fetch data from Supabase
   const [
     { count: membersCount },
     { count: activeSubscriptions },
