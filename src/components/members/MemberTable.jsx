@@ -58,7 +58,6 @@ export function MemberTable() {
               {new Date(member.created_at).toLocaleDateString()}
             </TableCell>
             <TableCell>
-              {/* Add action buttons */}
             </TableCell>
           </TableRow>
         ))}
