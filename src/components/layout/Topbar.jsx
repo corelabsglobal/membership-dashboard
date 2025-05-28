@@ -1,8 +1,24 @@
+'use client'
+
 import { Bell, Search, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
+import { useEffect, useState } from 'react'
 
 export function Topbar() {
+  const router = useRouter()
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      setIsAuthenticated(!!session)
+    }
+    checkAuth()
+  }, [])
+
   return (
     <header className="sticky top-0 z-10 bg-card shadow-sm">
       <div className="flex items-center justify-between h-16 px-6">
@@ -15,10 +31,15 @@ export function Topbar() {
           />
         </div>
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="icon" className="rounded-full">
+          <Button variant="ghost" size="icon" className="rounded-full cursor-pointer">
             <Bell className="w-5 h-5" />
           </Button>
-          <Button variant="ghost" size="icon" className="rounded-full">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full cursor-pointer"
+            onClick={() => router.push(isAuthenticated ? '/profile' : '/login')}
+          >
             <User className="w-5 h-5" />
           </Button>
         </div>
