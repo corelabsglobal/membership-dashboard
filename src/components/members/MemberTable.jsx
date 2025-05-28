@@ -26,7 +26,7 @@ export function MemberTable() {
         if (error) throw error
         setMembers(data)
       } catch (error) {
-        console.error('Error fetching members:', error)
+        console.error('Error fetching members: ', error)
       } finally {
         setLoading(false)
       }
