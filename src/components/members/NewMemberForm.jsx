@@ -18,6 +18,7 @@ import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { CalendarIcon } from 'lucide-react'
 import { format } from 'date-fns'
+import { Badge } from '@/components/ui/badge'
 
 export function NewMemberForm() {
   const router = useRouter()
@@ -40,6 +41,7 @@ export function NewMemberForm() {
           .from('membership_plans')
           .select('*')
           .eq('is_active', true)
+          .order('price', { ascending: true })
         
         if (error) throw error
         setPlans(data)
@@ -49,32 +51,63 @@ export function NewMemberForm() {
       }
     }
     fetchPlans()
-  }, [toast])
+  }, [])
+
+  const validateForm = () => {
+    if (!formData.email) {
+      toast.error('Email is required')
+      return false
+    }
+
+    if (!formData.phone) {
+      toast.error('Phone number is required')
+      return false
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      toast.error('Please enter a valid email address')
+      return false
+    }
+
+    if (formData.phone.length < 9) {
+      toast.error('Please enter a valid phone number (at least 9 digits)')
+      return false
+    }
+
+    return true
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
 
+    if (!validateForm()) {
+      setLoading(false)
+      return
+    }
+
     try {
-      // 1. Create the member
+      const formattedPhone = formData.phone.replace(/\D/g, '')
+
       const { data: member, error: memberError } = await supabase
         .from('members')
         .insert([{
           first_name: formData.first_name,
           last_name: formData.last_name,
           email: formData.email,
-          phone: formData.phone
+          phone: formattedPhone
         }])
         .select()
         .single()
 
       if (memberError) throw memberError
 
-      // 2. If plan selected, create subscription
       if (formData.plan_id) {
         const plan = plans.find(p => p.id == formData.plan_id)
-        const endDate = new Date(date)
-        endDate.setDate(endDate.getDate() + plan.duration_days)
+        
+        const endDate = plan.is_unlimited_duration 
+          ? null 
+          : new Date(new Date(date).setDate(date.getDate() + (plan.duration_days || 0)))
 
         const { error: subError } = await supabase
           .from('subscriptions')
@@ -82,7 +115,7 @@ export function NewMemberForm() {
             member_id: member.id,
             plan_id: formData.plan_id,
             start_date: date.toISOString(),
-            end_date: endDate.toISOString(),
+            end_date: endDate?.toISOString() || null,
             remaining_sessions: plan.session_count,
             is_active: true
           }])
@@ -90,10 +123,11 @@ export function NewMemberForm() {
         if (subError) throw subError
       }
 
-      toast,success('Member added Successfully')
+      toast.success('Member added successfully!')
       router.push('/dashboard/members')
     } catch (error) {
-      toast(error.message || 'Operation failed')
+      console.error('Error:', error)
+      toast.error(error.message || 'Operation failed. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -103,7 +137,7 @@ export function NewMemberForm() {
     <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         <div>
-          <Label htmlFor="first_name">First Name</Label>
+          <Label htmlFor="first_name">First Name *</Label>
           <Input
             id="first_name"
             value={formData.first_name}
@@ -112,7 +146,7 @@ export function NewMemberForm() {
           />
         </div>
         <div>
-          <Label htmlFor="last_name">Last Name</Label>
+          <Label htmlFor="last_name">Last Name *</Label>
           <Input
             id="last_name"
             value={formData.last_name}
@@ -121,28 +155,31 @@ export function NewMemberForm() {
           />
         </div>
         <div className="sm:col-span-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">Email *</Label>
           <Input
             id="email"
             type="email"
             value={formData.email}
             onChange={(e) => setFormData({...formData, email: e.target.value})}
             required
+            placeholder="example@domain.com"
           />
         </div>
         <div className="sm:col-span-2">
-          <Label htmlFor="phone">Phone Number</Label>
+          <Label htmlFor="phone">Phone Number *</Label>
           <Input
             id="phone"
             type="tel"
             value={formData.phone}
             onChange={(e) => setFormData({...formData, phone: e.target.value})}
+            required
+            placeholder="e.g., 0244123456"
           />
         </div>
         <div className="sm:col-span-2">
           <Label>Membership Plan</Label>
           <Select
-            value={formData.plan_id || ''}
+            value={formData.plan_id ? formData.plan_id.toString() : undefined}
             onValueChange={(value) => setFormData({
               ...formData, 
               plan_id: value ? parseInt(value) : null
@@ -155,11 +192,26 @@ export function NewMemberForm() {
               <SelectItem value="none">No plan</SelectItem>
               {plans.map((plan) => (
                 <SelectItem key={plan.id} value={plan.id.toString()}>
-                  {plan.name} (GHS {plan.price} - {plan.session_count} sessions)
+                  <div className="flex items-center justify-between">
+                    <span>
+                      {plan.name} - GHS {plan.price}
+                    </span>
+                    <span className="ml-2">
+                      {plan.is_unlimited_duration ? (
+                        <Badge variant="outline" className="ml-2">
+                          Unlimited
+                        </Badge>
+                      ) : (
+                        <span>{plan.duration_days} days</span>
+                      )}
+                    </span>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {plan.session_count} sessions
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>
-            
           </Select>
         </div>
         {formData.plan_id && (
