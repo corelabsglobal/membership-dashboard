@@ -17,36 +17,37 @@ export function PlanForm({ plan }) {
     duration_days: plan?.duration_days || 30,
     session_count: plan?.session_count || 8,
     description: plan?.description || '',
-    is_active: plan?.is_active ?? true
+    is_active: plan?.is_active ?? true,
+    is_unlimited_duration: plan?.is_unlimited_duration ?? false
   })
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
+      const dataToSave = {
+        ...formData,
+        duration_days: formData.is_unlimited_duration ? 0 : Number(formData.duration_days)
+      }
+
       if (plan) {
-        // Update existing plan
         const { error } = await supabase
           .from('membership_plans')
-          .update(formData)
+          .update(dataToSave)
           .eq('id', plan.id)
         
         if (error) throw error
-        toast({
-          title: 'Plan updated',
-          description: 'Your membership plan has been updated successfully',
-        })
+        toast.success('Plan updated successfully')
       } else {
-        // Create new plan
         const { error } = await supabase
           .from('membership_plans')
-          .insert([formData])
+          .insert([dataToSave])
         
         if (error) throw error
-        toast.success('New membership plan has been created successfully')
+        toast.success('New membership plan created successfully')
       }
       router.push('/dashboard/plans')
     } catch (error) {
-      toast(error.message || 'Error')
+      toast.error(error.message || 'An error occurred')
     }
   }
 
@@ -77,9 +78,13 @@ export function PlanForm({ plan }) {
           <Input
             id="duration"
             type="number"
-            value={formData.duration_days}
-            onChange={(e) => setFormData({...formData, duration_days: e.target.value})}
+            value={formData.is_unlimited_duration ? 0 : formData.duration_days}
+            onChange={(e) => {
+              const value = e.target.value === '' ? 0 : Number(e.target.value);
+              setFormData({...formData, duration_days: value})
+            }}
             required
+            disabled={formData.is_unlimited_duration}
           />
         </div>
         <div>
@@ -88,9 +93,22 @@ export function PlanForm({ plan }) {
             id="sessions"
             type="number"
             value={formData.session_count}
-            onChange={(e) => setFormData({...formData, session_count: e.target.value})}
+            onChange={(e) => setFormData({...formData, session_count: Number(e.target.value)})}
             required
           />
+        </div>
+        <div className="flex items-center space-x-2 sm:col-span-2">
+          <Switch
+            id="unlimited-duration"
+            checked={formData.is_unlimited_duration}
+            onCheckedChange={(checked) => setFormData({
+              ...formData, 
+              is_unlimited_duration: checked,
+              // Reset duration to default when toggling off
+              duration_days: checked ? 0 : 30
+            })}
+          />
+          <Label htmlFor="unlimited-duration">Unlimited Duration (expires when sessions run out)</Label>
         </div>
         <div className="sm:col-span-2">
           <Label htmlFor="description">Description</Label>
