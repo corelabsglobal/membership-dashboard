@@ -14,6 +14,7 @@ export function Topbar() {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession()
+      console.log(session)
       setIsAuthenticated(!!session)
     }
     checkAuth()
@@ -38,7 +39,7 @@ export function Topbar() {
             variant="ghost"
             size="icon"
             className="rounded-full cursor-pointer"
-            onClick={() => router.push(isAuthenticated ? '/profile' : '/login')}
+            onClick={() => router.push(isAuthenticated ? '/dashboard' : '/login')}
           >
             <User className="w-5 h-5" />
           </Button>
