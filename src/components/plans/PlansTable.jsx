@@ -73,7 +73,13 @@ export function PlansTable() {
             <TableRow key={plan.id}>
               <TableCell className="font-medium">{plan.name}</TableCell>
               <TableCell>GHS {plan.price}</TableCell>
-              <TableCell>{plan.duration_days} days</TableCell>
+              <TableCell>
+                {plan.is_unlimited_duration ? (
+                  <Badge variant="outline">Unlimited</Badge>
+                ) : (
+                  `${plan.duration_days} days`
+                )}
+              </TableCell>
               <TableCell>{plan.session_count}</TableCell>
               <TableCell>
                 <Badge variant={plan.is_active ? 'default' : 'secondary'}>
