@@ -45,11 +45,7 @@ export function NewMemberForm() {
         setPlans(data)
       } catch (error) {
         console.error('Error fetching plans:', error)
-        toast({
-          title: 'Error',
-          description: 'Failed to load membership plans',
-          variant: 'destructive'
-        })
+        toast.error('Failed to load membership plans')
       }
     }
     fetchPlans()
