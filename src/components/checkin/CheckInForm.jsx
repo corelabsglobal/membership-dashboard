@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import toast from 'react-hot-toast'
+import { Badge } from '@/components/ui/badge'
 
 export function CheckInForm() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -27,11 +28,7 @@ export function CheckInForm() {
       if (error) throw error
       
       if (data.length === 0) {
-        toast({
-          title: 'Member not found',
-          description: 'No member matches your search',
-          variant: 'destructive'
-        })
+        toast.error('No member matches your search')
         return
       }
       
@@ -39,14 +36,19 @@ export function CheckInForm() {
       setMember(foundMember)
       
       // Find active subscription
-      const activeSub = foundMember.subscriptions?.find(
-        sub => sub.is_active && new Date(sub.end_date) > new Date()
-      )
+      const activeSub = foundMember.subscriptions?.find(sub => {
+        const isActive = sub.is_active
+        const hasSessions = sub.remaining_sessions > 0
+        const isUnlimited = sub.membership_plans?.is_unlimited_duration
+        const notExpired = isUnlimited || (sub.end_date && new Date(sub.end_date) > new Date())
+        
+        return isActive && hasSessions && notExpired
+      })
       
       setSubscription(activeSub)
       
       if (!activeSub) {
-        toast.error('This member does not have an active subscription')
+        toast.error('No active subscription found or no sessions remaining')
       }
     } catch (error) {
       console.error('Error searching member:', error)
@@ -60,13 +62,21 @@ export function CheckInForm() {
     if (!subscription || subscription.remaining_sessions <= 0) return
     
     try {
-      // Deduct session
+      // Deduct session (unless unlimited sessions)
+      const plan = subscription.membership_plans
+      const isUnlimitedSessions = plan?.session_count === null || plan?.session_count === undefined
+      
+      const updates = {
+        updated_at: new Date().toISOString()
+      }
+      
+      if (!isUnlimitedSessions) {
+        updates.remaining_sessions = subscription.remaining_sessions - 1
+      }
+
       const { error: updateError } = await supabase
         .from('subscriptions')
-        .update({ 
-          remaining_sessions: subscription.remaining_sessions - 1,
-          updated_at: new Date().toISOString()
-        })
+        .update(updates)
         .eq('id', subscription.id)
       
       if (updateError) throw updateError
@@ -81,12 +91,17 @@ export function CheckInForm() {
       
       if (sessionError) throw sessionError
       
-      toast.success(`Check-in successful. ${subscription.remaining_sessions - 1} sessions remaining.`)
+      let message = 'Check-in successful.'
+      if (!isUnlimitedSessions) {
+        message += ` ${updates.remaining_sessions} sessions remaining.`
+      }
+      
+      toast.success(message)
       
       // Refresh subscription data
       const { data } = await supabase
         .from('subscriptions')
-        .select('*')
+        .select('*, membership_plans(*)')
         .eq('id', subscription.id)
         .single()
       
@@ -104,6 +119,7 @@ export function CheckInForm() {
           placeholder="Search by name, email, or phone"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
         />
         <Button onClick={handleSearch} disabled={loading}>
           {loading ? 'Searching...' : 'Search'}
@@ -121,26 +137,41 @@ export function CheckInForm() {
             <div className="mt-4 space-y-2">
               <div>
                 <Label>Membership Plan</Label>
-                <p>{subscription.membership_plans?.name}</p>
+                <div className="flex items-center gap-2">
+                  <p>{subscription.membership_plans?.name}</p>
+                  {subscription.membership_plans?.is_unlimited_duration && (
+                    <Badge variant="outline">Unlimited</Badge>
+                  )}
+                </div>
               </div>
               <div>
                 <Label>Remaining Sessions</Label>
-                <p>{subscription.remaining_sessions}</p>
+                <p>
+                  {subscription.membership_plans?.session_count === null 
+                    ? 'Unlimited' 
+                    : subscription.remaining_sessions}
+                </p>
               </div>
               <div>
                 <Label>Expires</Label>
-                <p>{new Date(subscription.end_date).toLocaleDateString()}</p>
+                <p>
+                  {subscription.membership_plans?.is_unlimited_duration
+                    ? 'Never'
+                    : subscription.end_date 
+                      ? new Date(subscription.end_date).toLocaleDateString()
+                      : 'No end date'}
+                </p>
               </div>
               
               <Button 
                 onClick={handleCheckIn} 
-                disabled={subscription.remaining_sessions <= 0}
+                disabled={!subscription.membership_plans?.is_unlimited_duration && subscription.remaining_sessions <= 0}
                 className="mt-4"
               >
                 Mark Attendance
               </Button>
               
-              {subscription.remaining_sessions <= 0 && (
+              {!subscription.membership_plans?.is_unlimited_duration && subscription.remaining_sessions <= 0 && (
                 <p className="text-sm text-red-500 mt-2">
                   No sessions remaining. Please renew membership.
                 </p>
