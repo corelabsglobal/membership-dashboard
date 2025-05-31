@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -18,7 +18,7 @@ export function PlanForm({ plan }) {
     session_count: plan?.session_count || 8,
     description: plan?.description || '',
     is_active: plan?.is_active ?? true,
-    is_unlimited_duration: plan?.is_unlimited_duration ?? false
+    is_unlimited_sessions: plan?.is_unlimited_sessions ?? false
   })
 
   const handleSubmit = async (e) => {
@@ -26,7 +26,8 @@ export function PlanForm({ plan }) {
     try {
       const dataToSave = {
         ...formData,
-        duration_days: formData.is_unlimited_duration ? 0 : Number(formData.duration_days)
+        // Set session_count to 0 for unlimited sessions
+        session_count: formData.is_unlimited_sessions ? 0 : Number(formData.session_count)
       }
 
       if (plan) {
@@ -78,13 +79,12 @@ export function PlanForm({ plan }) {
           <Input
             id="duration"
             type="number"
-            value={formData.is_unlimited_duration ? 0 : formData.duration_days}
+            value={formData.duration_days}
             onChange={(e) => {
               const value = e.target.value === '' ? 0 : Number(e.target.value);
               setFormData({...formData, duration_days: value})
             }}
             required
-            disabled={formData.is_unlimited_duration}
           />
         </div>
         <div>
@@ -92,23 +92,27 @@ export function PlanForm({ plan }) {
           <Input
             id="sessions"
             type="number"
-            value={formData.session_count}
-            onChange={(e) => setFormData({...formData, session_count: Number(e.target.value)})}
+            value={formData.is_unlimited_sessions ? 0 : formData.session_count}
+            onChange={(e) => setFormData({
+              ...formData, 
+              session_count: Number(e.target.value)
+            })}
             required
+            disabled={formData.is_unlimited_sessions}
           />
         </div>
         <div className="flex items-center space-x-2 sm:col-span-2">
           <Switch
-            id="unlimited-duration"
-            checked={formData.is_unlimited_duration}
+            id="unlimited-sessions"
+            checked={formData.is_unlimited_sessions}
             onCheckedChange={(checked) => setFormData({
               ...formData, 
-              is_unlimited_duration: checked,
-              // Reset duration to default when toggling off
-              duration_days: checked ? 0 : 30
+              is_unlimited_sessions: checked,
+              // Reset session count when toggling off
+              session_count: checked ? 0 : 8
             })}
           />
-          <Label htmlFor="unlimited-duration">Unlimited Duration (expires when sessions run out)</Label>
+          <Label htmlFor="unlimited-sessions">Unlimited Sessions</Label>
         </div>
         <div className="sm:col-span-2">
           <Label htmlFor="description">Description</Label>

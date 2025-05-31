@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
@@ -74,13 +74,15 @@ export function PlansTable() {
               <TableCell className="font-medium">{plan.name}</TableCell>
               <TableCell>GHS {plan.price}</TableCell>
               <TableCell>
-                {plan.is_unlimited_duration ? (
+                {plan.duration_days} days
+              </TableCell>
+              <TableCell>
+                {plan.is_unlimited_sessions ? (
                   <Badge variant="outline">Unlimited</Badge>
                 ) : (
-                  `${plan.duration_days} days`
+                  plan.session_count
                 )}
               </TableCell>
-              <TableCell>{plan.session_count}</TableCell>
               <TableCell>
                 <Badge variant={plan.is_active ? 'default' : 'secondary'}>
                   {plan.is_active ? 'Active' : 'Inactive'}
