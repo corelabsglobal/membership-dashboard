@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
@@ -11,7 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { Trash2 } from 'lucide-react'
+import { Edit, Trash2 } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -22,6 +22,7 @@ import {
   DialogClose,
 } from '@/components/ui/dialog'
 import { toast } from 'react-hot-toast'
+import Link from 'next/link'
 
 export function MemberTable() {
   const [members, setMembers] = useState([])
@@ -100,15 +101,23 @@ export function MemberTable() {
                 {new Date(member.created_at).toLocaleDateString()}
               </TableCell>
               <TableCell>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDeleteClick(member)}
-                  className="text-red-500 hover:text-red-700"
-                >
-                  <Trash2 className="w-4 h-4 mr-1" />
-                  Delete
-                </Button>
+                <div className="flex space-x-2">
+                  <Link href={`/dashboard/members/edit/${member.id}`}>
+                    <Button variant="outline" size="sm">
+                      <Edit className="w-4 h-4 mr-1" />
+                      Edit
+                    </Button>
+                  </Link>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDeleteClick(member)}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Delete
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           ))}
