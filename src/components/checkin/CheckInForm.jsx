@@ -38,9 +38,9 @@ export function CheckInForm() {
       // Find active subscription
       const activeSub = foundMember.subscriptions?.find(sub => {
         const isActive = sub.is_active
-        const hasSessions = sub.remaining_sessions > 0
-        const isUnlimited = sub.membership_plans?.is_unlimited_duration
-        const notExpired = isUnlimited || (sub.end_date && new Date(sub.end_date) > new Date())
+        const isUnlimitedSessions = sub.membership_plans?.is_unlimited_sessions
+        const hasSessions = isUnlimitedSessions || sub.remaining_sessions > 0
+        const notExpired = sub.end_date ? new Date(sub.end_date) > new Date() : true
         
         return isActive && hasSessions && notExpired
       })
@@ -48,7 +48,7 @@ export function CheckInForm() {
       setSubscription(activeSub)
       
       if (!activeSub) {
-        toast.error('No active subscription found or no sessions remaining')
+        toast.error('No active subscription found')
       }
     } catch (error) {
       console.error('Error searching member:', error)
@@ -59,29 +59,30 @@ export function CheckInForm() {
   }
 
   const handleCheckIn = async () => {
-    if (!subscription || subscription.remaining_sessions <= 0) return
+    if (!subscription) return
     
     try {
-      // Deduct session (unless unlimited sessions)
-      const plan = subscription.membership_plans
-      const isUnlimitedSessions = plan?.session_count === null || plan?.session_count === undefined
+      const isUnlimitedSessions = subscription.membership_plans?.is_unlimited_sessions
       
-      const updates = {
-        updated_at: new Date().toISOString()
-      }
-      
+      // Only update remaining sessions if not unlimited
       if (!isUnlimitedSessions) {
-        updates.remaining_sessions = subscription.remaining_sessions - 1
+        if (subscription.remaining_sessions <= 0) {
+          toast.error('No sessions remaining')
+          return
+        }
+
+        const { error: updateError } = await supabase
+          .from('subscriptions')
+          .update({ 
+            remaining_sessions: subscription.remaining_sessions - 1,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', subscription.id)
+        
+        if (updateError) throw updateError
       }
 
-      const { error: updateError } = await supabase
-        .from('subscriptions')
-        .update(updates)
-        .eq('id', subscription.id)
-      
-      if (updateError) throw updateError
-      
-      // Record session
+      // Always record the session
       const { error: sessionError } = await supabase
         .from('sessions')
         .insert([{
@@ -91,21 +92,22 @@ export function CheckInForm() {
       
       if (sessionError) throw sessionError
       
-      let message = 'Check-in successful.'
+      // Refresh subscription data if needed
       if (!isUnlimitedSessions) {
-        message += ` ${updates.remaining_sessions} sessions remaining.`
+        const { data } = await supabase
+          .from('subscriptions')
+          .select('*, membership_plans(*)')
+          .eq('id', subscription.id)
+          .single()
+        
+        setSubscription(data)
       }
       
-      toast.success(message)
-      
-      // Refresh subscription data
-      const { data } = await supabase
-        .from('subscriptions')
-        .select('*, membership_plans(*)')
-        .eq('id', subscription.id)
-        .single()
-      
-      setSubscription(data)
+      toast.success(
+        isUnlimitedSessions 
+          ? 'Check-in successful (Unlimited sessions)' 
+          : `Check-in successful. ${subscription.remaining_sessions - 1} sessions remaining.`
+      )
     } catch (error) {
       console.error('Error checking in:', error)
       toast.error('Failed to record check-in')
@@ -139,15 +141,15 @@ export function CheckInForm() {
                 <Label>Membership Plan</Label>
                 <div className="flex items-center gap-2">
                   <p>{subscription.membership_plans?.name}</p>
-                  {subscription.membership_plans?.is_unlimited_duration && (
-                    <Badge variant="outline">Unlimited</Badge>
+                  {subscription.membership_plans?.is_unlimited_sessions && (
+                    <Badge variant="outline">Unlimited Sessions</Badge>
                   )}
                 </div>
               </div>
               <div>
                 <Label>Remaining Sessions</Label>
                 <p>
-                  {subscription.membership_plans?.session_count === null 
+                  {subscription.membership_plans?.is_unlimited_sessions 
                     ? 'Unlimited' 
                     : subscription.remaining_sessions}
                 </p>
@@ -155,23 +157,21 @@ export function CheckInForm() {
               <div>
                 <Label>Expires</Label>
                 <p>
-                  {subscription.membership_plans?.is_unlimited_duration
-                    ? 'Never'
-                    : subscription.end_date 
-                      ? new Date(subscription.end_date).toLocaleDateString()
-                      : 'No end date'}
+                  {subscription.end_date 
+                    ? new Date(subscription.end_date).toLocaleDateString()
+                    : 'No end date'}
                 </p>
               </div>
               
               <Button 
-                onClick={handleCheckIn} 
-                disabled={!subscription.membership_plans?.is_unlimited_duration && subscription.remaining_sessions <= 0}
+                onClick={handleCheckIn}
                 className="mt-4"
               >
                 Mark Attendance
               </Button>
               
-              {!subscription.membership_plans?.is_unlimited_duration && subscription.remaining_sessions <= 0 && (
+              {!subscription.membership_plans?.is_unlimited_sessions && 
+               subscription.remaining_sessions <= 0 && (
                 <p className="text-sm text-red-500 mt-2">
                   No sessions remaining. Please renew membership.
                 </p>
