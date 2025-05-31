@@ -105,9 +105,7 @@ export function NewMemberForm() {
       if (formData.plan_id) {
         const plan = plans.find(p => p.id == formData.plan_id)
         
-        const endDate = plan.is_unlimited_duration 
-          ? null 
-          : new Date(new Date(date).setDate(date.getDate() + (plan.duration_days || 0)))
+        const endDate = new Date(new Date(date).setDate(date.getDate() + (plan.duration_days || 0)))
 
         const { error: subError } = await supabase
           .from('subscriptions')
@@ -115,8 +113,8 @@ export function NewMemberForm() {
             member_id: member.id,
             plan_id: formData.plan_id,
             start_date: date.toISOString(),
-            end_date: endDate?.toISOString() || null,
-            remaining_sessions: plan.session_count,
+            end_date: endDate?.toISOString(),
+            remaining_sessions: plan.is_unlimited_sessions ? 9999 : plan.session_count,
             is_active: true
           }])
 
@@ -197,17 +195,18 @@ export function NewMemberForm() {
                       {plan.name} - GHS {plan.price}
                     </span>
                     <span className="ml-2">
-                      {plan.is_unlimited_duration ? (
-                        <Badge variant="outline" className="ml-2">
-                          Unlimited
-                        </Badge>
-                      ) : (
-                        <span>{plan.duration_days} days</span>
-                      )}
+                      {plan.duration_days} days
                     </span>
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {plan.session_count} sessions
+                    {plan.is_unlimited_sessions ? (
+                      <span className="flex items-center">
+                        <Badge variant="outline" className="mr-1">Unlimited</Badge>
+                        sessions
+                      </span>
+                    ) : (
+                      `${plan.session_count} sessions`
+                    )}
                   </div>
                 </SelectItem>
               ))}
