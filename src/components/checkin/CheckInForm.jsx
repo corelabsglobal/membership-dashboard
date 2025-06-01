@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,57 +10,69 @@ import { Badge } from '@/components/ui/badge'
 
 export function CheckInForm() {
   const [searchTerm, setSearchTerm] = useState('')
-  const [member, setMember] = useState(null)
+  const [members, setMembers] = useState([])
+  const [selectedMember, setSelectedMember] = useState(null)
   const [subscription, setSubscription] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [searchLoading, setSearchLoading] = useState(false)
 
-  const handleSearch = async () => {
-    if (!searchTerm.trim()) return
-    
-    setLoading(true)
+  // Debounce search to avoid too many requests
+  const debouncedSearch = useCallback(async (term) => {
+    if (!term.trim()) {
+      setMembers([])
+      return
+    }
+
+    setSearchLoading(true)
     try {
       const { data, error } = await supabase
         .from('members')
         .select('*, subscriptions(*, membership_plans(*))')
-        .or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`)
-        .limit(1)
+        .or(`first_name.ilike.%${term}%,last_name.ilike.%${term}%,email.ilike.%${term}%,phone.ilike.%${term}%`)
+        .limit(5) // Limit to 5 results for better UX
       
       if (error) throw error
       
-      if (data.length === 0) {
-        toast.error('No member matches your search')
-        return
-      }
-      
-      const foundMember = data[0]
-      setMember(foundMember)
-      
-      // Find active subscription
-      const activeSub = foundMember.subscriptions?.find(sub => {
-        const isActive = sub.is_active
-        const isUnlimitedSessions = sub.membership_plans?.is_unlimited_sessions
-        const hasSessions = isUnlimitedSessions || sub.remaining_sessions > 0
-        const notExpired = sub.end_date ? new Date(sub.end_date) > new Date() : true
-        
-        return isActive && hasSessions && notExpired
-      })
-      
-      setSubscription(activeSub)
-      
-      if (!activeSub) {
-        toast.error('No active subscription found')
-      }
+      setMembers(data || [])
     } catch (error) {
-      console.error('Error searching member:', error)
-      toast.error('Failed to search for member')
+      console.error('Error searching members:', error)
+      toast.error('Failed to search for members')
     } finally {
-      setLoading(false)
+      setSearchLoading(false)
     }
+  }, [])
+
+  // Debounce effect
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      debouncedSearch(searchTerm)
+    }, 300) // 300ms debounce delay
+
+    return () => clearTimeout(timer)
+  }, [searchTerm, debouncedSearch])
+
+  const handleSelectMember = (member) => {
+    setSelectedMember(member)
+    setSearchTerm(`${member.first_name} ${member.last_name}`)
+    setMembers([]) // Clear search results
+    
+    // Find active subscription
+    const activeSub = member.subscriptions?.find(sub => {
+      const isActive = sub.is_active
+      const isUnlimitedSessions = sub.membership_plans?.is_unlimited_sessions
+      const hasSessions = isUnlimitedSessions || sub.remaining_sessions > 0
+      const notExpired = sub.end_date ? new Date(sub.end_date) > new Date() : true
+      
+      return isActive && hasSessions && notExpired
+    })
+    
+    setSubscription(activeSub)
   }
 
   const handleCheckIn = async () => {
     if (!subscription) return
     
+    setLoading(true)
     try {
       const isUnlimitedSessions = subscription.membership_plans?.is_unlimited_sessions
       
@@ -82,11 +94,12 @@ export function CheckInForm() {
         if (updateError) throw updateError
       }
 
-      // Always record the session
+      // Record the session
       const { error: sessionError } = await supabase
         .from('sessions')
         .insert([{
           subscription_id: subscription.id,
+          member_id: selectedMember.id,
           check_in_time: new Date().toISOString()
         }])
       
@@ -108,32 +121,68 @@ export function CheckInForm() {
           ? 'Check-in successful (Unlimited sessions)' 
           : `Check-in successful. ${subscription.remaining_sessions - 1} sessions remaining.`
       )
+      
+      // Reset form after successful check-in
+      setSelectedMember(null)
+      setSearchTerm('')
     } catch (error) {
       console.error('Error checking in:', error)
       toast.error('Failed to record check-in')
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
+      <div className="relative">
         <Input
           placeholder="Search by name, email, or phone"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+          onChange={(e) => {
+            setSearchTerm(e.target.value)
+            setSelectedMember(null)
+            setSubscription(null)
+          }}
+          className="pr-10" // Add padding for loading indicator
         />
-        <Button onClick={handleSearch} disabled={loading}>
-          {loading ? 'Searching...' : 'Search'}
-        </Button>
+        
+        {/* Search loading indicator */}
+        {searchLoading && (
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
+          </div>
+        )}
+        
+        {/* Search results dropdown */}
+        {members.length > 0 && !selectedMember && (
+          <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto">
+            {members.map((member) => (
+              <div
+                key={member.id}
+                className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                onClick={() => handleSelectMember(member)}
+              >
+                <div className="font-medium">
+                  {member.first_name} {member.last_name}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  {member.email} | {member.phone}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
       
-      {member && (
+      {selectedMember && (
         <div className="border rounded-lg p-4">
           <h3 className="font-medium">
-            {member.first_name} {member.last_name}
+            {selectedMember.first_name} {selectedMember.last_name}
           </h3>
-          <p className="text-sm text-gray-600">{member.email}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            {selectedMember.email} | {selectedMember.phone}
+          </p>
           
           {subscription ? (
             <div className="mt-4 space-y-2">
@@ -166,8 +215,9 @@ export function CheckInForm() {
               <Button 
                 onClick={handleCheckIn}
                 className="mt-4"
+                disabled={loading}
               >
-                Mark Attendance
+                {loading ? 'Processing...' : 'Mark Attendance'}
               </Button>
               
               {!subscription.membership_plans?.is_unlimited_sessions && 
