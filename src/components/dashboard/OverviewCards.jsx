@@ -3,6 +3,10 @@ import { Users, Calendar, CreditCard, Activity } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export async function OverviewCards() {
+  const now = new Date()
+  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+
   const [
     { count: membersCount },
     { count: activeSubscriptions },
@@ -12,7 +16,11 @@ export async function OverviewCards() {
     supabase.from('members').select('*', { count: 'exact', head: true }),
     supabase.from('subscriptions').select('*', { count: 'exact', head: true }).eq('is_active', true),
     supabase.from('sessions').select('*', { count: 'exact', head: true }).gte('check_in_time', new Date().toISOString().split('T')[0]),
-    supabase.from('payments').select('sum(amount)')
+    supabase
+      .from('payments')
+      .select('sum(amount)')
+      .gte('payment_date', firstDayOfMonth.toISOString())
+      .lte('payment_date', lastDayOfMonth.toISOString())
   ])
 
   const cards = [
