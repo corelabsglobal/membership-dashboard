@@ -47,7 +47,7 @@ export function PosDashboard() {
           <CardTitle>Today's Summary</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">${todayRevenue.toFixed(2)}</div>
+          <div className="text-2xl font-bold">₵{todayRevenue.toFixed(2)}</div>
           <p className="text-sm text-muted-foreground">Total revenue today</p>
         </CardContent>
       </Card>
@@ -75,7 +75,7 @@ export function PosDashboard() {
                   </TableCell>
                   <TableCell>{session.skate_inventory?.name}</TableCell>
                   <TableCell>{session.duration_minutes} min</TableCell>
-                  <TableCell className="text-right">${session.amount_paid.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">₵{session.amount_paid.toFixed(2)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
