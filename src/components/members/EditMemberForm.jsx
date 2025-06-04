@@ -14,6 +14,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { CalendarIcon, CreditCard } from 'lucide-react'
+import { format } from 'date-fns'
+import { Badge } from '@/components/ui/badge'
 
 export function EditMemberForm() {
   const router = useRouter()
@@ -27,6 +32,15 @@ export function EditMemberForm() {
   })
   const [plans, setPlans] = useState([])
   const [subscription, setSubscription] = useState(null)
+  const [showPaymentForm, setShowPaymentForm] = useState(false)
+  const [paymentData, setPaymentData] = useState({
+    plan_id: null,
+    amount: '',
+    payment_method: 'cash',
+    transaction_id: '',
+    notes: ''
+  })
+  const [date, setDate] = useState(new Date())
 
   useEffect(() => {
     const fetchData = async () => {
@@ -139,13 +153,29 @@ export function EditMemberForm() {
     }
   }
 
-  const handlePlanChange = async (planId) => {
+  const handlePlanSelect = (planId) => {
     if (!planId) return
+    
+    const selectedPlan = plans.find(p => p.id == planId)
+    setPaymentData({
+      ...paymentData,
+      plan_id: planId,
+      amount: selectedPlan?.price?.toString() || ''
+    })
+    setShowPaymentForm(true)
+  }
+
+  const processPlanChange = async () => {
+    if (!paymentData.plan_id || !paymentData.amount) {
+      toast.error('Please select a plan and enter payment amount')
+      return
+    }
 
     try {
       setLoading(true)
-      const plan = plans.find(p => p.id == planId)
-      
+      const plan = plans.find(p => p.id == paymentData.plan_id)
+      const amount = parseFloat(paymentData.amount) || 0
+
       // Deactivate current subscription if exists
       if (subscription) {
         const { error: deactivateError } = await supabase
@@ -157,11 +187,11 @@ export function EditMemberForm() {
       }
 
       // Create new subscription
-      const startDate = new Date()
+      const startDate = date
       const endDate = new Date(startDate)
       endDate.setDate(endDate.getDate() + (plan.duration_days || 0))
 
-      const { error: createError } = await supabase
+      const { data: newSubscription, error: createError } = await supabase
         .from('subscriptions')
         .insert([{
           member_id: id,
@@ -171,8 +201,26 @@ export function EditMemberForm() {
           remaining_sessions: plan.is_unlimited_sessions ? 9999 : plan.session_count,
           is_active: true
         }])
+        .select()
+        .single()
 
       if (createError) throw createError
+
+      // Record payment if amount > 0
+      if (amount > 0) {
+        const { error: paymentError } = await supabase
+          .from('payments')
+          .insert([{
+            subscription_id: newSubscription.id,
+            amount: amount,
+            payment_date: new Date().toISOString(),
+            payment_method: paymentData.payment_method,
+            transaction_id: paymentData.transaction_id || null,
+            notes: paymentData.notes || null
+          }])
+
+        if (paymentError) throw paymentError
+      }
 
       // Refresh subscription data
       const { data } = await supabase
@@ -183,7 +231,8 @@ export function EditMemberForm() {
         .single()
 
       setSubscription(data)
-      toast.success('Membership plan updated successfully!')
+      setShowPaymentForm(false)
+      toast.success('Membership plan updated and payment recorded!')
     } catch (error) {
       console.error('Error updating plan:', error)
       toast.error('Failed to update membership plan')
@@ -199,6 +248,7 @@ export function EditMemberForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        {/* Personal Info Fields */}
         <div>
           <Label htmlFor="first_name">First Name *</Label>
           <Input
@@ -239,6 +289,8 @@ export function EditMemberForm() {
             placeholder="e.g., 0244123456"
           />
         </div>
+
+        {/* Current Membership Plan */}
         <div className="sm:col-span-2">
           <Label>Current Membership Plan</Label>
           {subscription ? (
@@ -249,9 +301,11 @@ export function EditMemberForm() {
                 </span>
                 <span className="text-sm">
                   {subscription.membership_plans?.is_unlimited_sessions ? (
-                    <span className="text-green-600">Unlimited sessions</span>
+                    <Badge variant="outline" className="text-green-600">Unlimited sessions</Badge>
                   ) : (
-                    `${subscription.remaining_sessions} sessions remaining`
+                    <Badge variant="outline">
+                      {subscription.remaining_sessions} sessions remaining
+                    </Badge>
                   )}
                 </span>
               </div>
@@ -261,14 +315,23 @@ export function EditMemberForm() {
                   ? new Date(subscription.end_date).toLocaleDateString()
                   : 'No end date'}
               </div>
+              {subscription.end_date && new Date(subscription.end_date) < new Date() && (
+                <Badge variant="destructive" className="mt-2">
+                  Expired
+                </Badge>
+              )}
             </div>
           ) : (
-            <p className="text-sm text-gray-500">No active membership</p>
+            <div className="border rounded-md p-3 text-center text-gray-500">
+              No active membership
+            </div>
           )}
         </div>
+
+        {/* Change Membership Plan */}
         <div className="sm:col-span-2">
           <Label>Change Membership Plan</Label>
-          <Select onValueChange={handlePlanChange}>
+          <Select onValueChange={handlePlanSelect}>
             <SelectTrigger>
               <SelectValue placeholder="Select a new plan" />
             </SelectTrigger>
@@ -288,7 +351,114 @@ export function EditMemberForm() {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Payment Form - Only shown when changing plan */}
+        {showPaymentForm && (
+          <div className="sm:col-span-2 border-t pt-4 space-y-4">
+            <div className="flex items-center space-x-2">
+              <CreditCard className="h-5 w-5" />
+              <h3 className="font-medium">Payment Information</h3>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <Label>Start Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {date ? format(date, 'PPP') : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={setDate}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div>
+                <Label htmlFor="amount">Amount Paid (GHS) *</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  value={paymentData.amount}
+                  onChange={(e) => setPaymentData({...paymentData, amount: e.target.value})}
+                  required
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="payment_method">Payment Method *</Label>
+                <Select
+                  value={paymentData.payment_method}
+                  onValueChange={(value) => setPaymentData({...paymentData, payment_method: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="mobile_money">Mobile Money</SelectItem>
+                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                    <SelectItem value="card">Credit/Debit Card</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {paymentData.payment_method !== 'cash' && (
+                <div className="sm:col-span-2">
+                  <Label htmlFor="transaction_id">Transaction ID/Reference</Label>
+                  <Input
+                    id="transaction_id"
+                    value={paymentData.transaction_id}
+                    onChange={(e) => setPaymentData({...paymentData, transaction_id: e.target.value})}
+                    placeholder="e.g., MTN123456789"
+                  />
+                </div>
+              )}
+
+              <div className="sm:col-span-2">
+                <Label htmlFor="notes">Payment Notes</Label>
+                <Input
+                  id="notes"
+                  value={paymentData.notes}
+                  onChange={(e) => setPaymentData({...paymentData, notes: e.target.value})}
+                  placeholder="Any additional payment details"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowPaymentForm(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={processPlanChange}
+                disabled={loading}
+              >
+                {loading ? 'Processing...' : 'Update Plan & Record Payment'}
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
+
       <div className="flex justify-end space-x-3">
         <Button
           type="button"
