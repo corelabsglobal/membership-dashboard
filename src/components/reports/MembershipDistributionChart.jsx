@@ -46,22 +46,33 @@ export function MembershipDistributionChart() {
         const labels = Object.keys(countsMap)
         const counts = Object.values(countsMap)
 
-        const backgroundColors = [
-          'oklch(var(--chart-1))',
-          'oklch(var(--chart-2))',
-          'oklch(var(--chart-3))',
-          'oklch(var(--chart-4))',
-          'oklch(var(--chart-5))',
-          'oklch(var(--chart-6))',
-          'oklch(var(--chart-7))',
+        // Assign specific colors to known plans
+        const colorMap = {
+          'Monthly': '#4F46E5',             // Indigo
+          'Monthly Unlimited': '#10B981',   // Emerald
+          'Unknown': '#F59E0B',             // Amber
+        }
+
+        const fallbackColors = [
+          '#6366F1', // Indigo-500
+          '#14B8A6', // Teal-500
+          '#EC4899', // Pink-500
+          '#F97316', // Orange-500
+          '#A78BFA', // Purple-400
+          '#F43F5E', // Rose-500
+          '#22D3EE', // Cyan-400
         ]
+
+        const backgroundColor = labels.map((label, idx) =>
+          colorMap[label] || fallbackColors[idx % fallbackColors.length]
+        )
 
         setChartData({
           labels,
           datasets: [
             {
               data: counts,
-              backgroundColor: backgroundColors.slice(0, labels.length),
+              backgroundColor,
               borderWidth: 1,
             },
           ],
@@ -94,6 +105,15 @@ export function MembershipDistributionChart() {
                     color: '#4B5563',
                     font: {
                       size: 14,
+                    },
+                  },
+                },
+                tooltip: {
+                  callbacks: {
+                    label: function (context) {
+                      const label = context.label || ''
+                      const value = context.raw || 0
+                      return `${label}: ${value} member${value > 1 ? 's' : ''}`
                     },
                   },
                 },
