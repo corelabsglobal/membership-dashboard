@@ -48,19 +48,19 @@ export function MembershipDistributionChart() {
 
         // Assign specific colors to known plans
         const colorMap = {
-          'Monthly': '#4F46E5',             // Indigo
-          'Monthly Unlimited': '#10B981',   // Emerald
-          'Unknown': '#F59E0B',             // Amber
+          'Monthly': '#4F46E5',  
+          'Monthly Unlimited': '#10B981',
+          'Unknown': '#F59E0B', 
         }
 
         const fallbackColors = [
-          '#6366F1', // Indigo-500
-          '#14B8A6', // Teal-500
-          '#EC4899', // Pink-500
-          '#F97316', // Orange-500
-          '#A78BFA', // Purple-400
-          '#F43F5E', // Rose-500
-          '#22D3EE', // Cyan-400
+          '#6366F1',
+          '#14B8A6',
+          '#EC4899', 
+          '#F97316',
+          '#A78BFA',
+          '#F43F5E',
+          '#22D3EE',
         ]
 
         const backgroundColor = labels.map((label, idx) =>
