@@ -120,12 +120,12 @@ export function OverviewCards() {
             icon: Calendar,
             description: sessionText
           },
-          {
-            title: "Monthly Revenue",
-            value: `GHS ${currentRevenue.toLocaleString()}`,
-            icon: Activity,
-            description: `${revenueDiff >= 0 ? '+' : ''}GHS ${Math.abs(revenueDiff).toLocaleString()} (${revenuePercentage}%) from last month`
-          }
+          //{
+            //title: "Monthly Revenue",
+            //value: `GHS ${currentRevenue.toLocaleString()}`,
+            //icon: Activity,
+            //description: `${revenueDiff >= 0 ? '+' : ''}GHS ${Math.abs(revenueDiff).toLocaleString()} (${revenuePercentage}%) from last month`
+          //}
         ])
       } catch (error) {
         console.error('Error fetching dashboard data:', error)
@@ -149,12 +149,12 @@ export function OverviewCards() {
             icon: Calendar,
             description: "Data unavailable"
           },
-          {
-            title: "Monthly Revenue",
-            value: "GHS 0",
-            icon: Activity,
-            description: "Data unavailable"
-          }
+          //{
+            //title: "Monthly Revenue",
+            //value: "GHS 0",
+            //icon: Activity,
+            //description: "Data unavailable"
+          //}
         ])
       } finally {
         setLoading(false)
@@ -166,7 +166,7 @@ export function OverviewCards() {
 
   if (loading) {
     return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {[1, 2, 3, 4].map((i) => (
           <Card key={i}>
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
@@ -184,7 +184,7 @@ export function OverviewCards() {
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {cards.map((card, index) => (
         <Card key={index}>
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
