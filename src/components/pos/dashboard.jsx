@@ -62,7 +62,6 @@ export function PosDashboard() {
             <TableHeader>
               <TableRow>
                 <TableHead>Customer</TableHead>
-                <TableHead>Skate</TableHead>
                 <TableHead>Duration</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
               </TableRow>
@@ -73,7 +72,6 @@ export function PosDashboard() {
                   <TableCell>
                     {session.walkin_customers?.first_name} {session.walkin_customers?.last_name}
                   </TableCell>
-                  <TableCell>{session.skate_inventory?.name}</TableCell>
                   <TableCell>{session.duration_minutes} min</TableCell>
                   <TableCell className="text-right">₵{session.amount_paid.toFixed(2)}</TableCell>
                 </TableRow>
