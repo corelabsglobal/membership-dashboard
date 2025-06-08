@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Topbar } from '@/components/layout/Topbar'
-import { Sidebar } from '@/components/pos/Sidebar'
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Sidebar } from '@/components/layout/Sidebar'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
@@ -25,15 +25,18 @@ export default function ShoeSizesPage() {
 
   const fetchSizes = async () => {
     try {
+      setIsLoading(true)
       const { data, error } = await supabase
         .from('shoe_sizes')
         .select('*')
         .order('size', { ascending: true })
       
       if (error) throw error
-      setSizes(data)
+      setSizes(data || [])
     } catch (error) {
       toast.error("Error fetching shoe sizes")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -52,12 +55,7 @@ export default function ShoeSizesPage() {
       if (error) throw error
       
       toast.success("Size added successfully")
-      
-      setNewSize({
-        size: '',
-        description: ''
-      })
-      
+      setNewSize({ size: '', description: '' })
       fetchSizes()
     } catch (error) {
       toast.error("Error adding size")
@@ -67,21 +65,25 @@ export default function ShoeSizesPage() {
   }
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar />
+    <div className="flex min-h-screen bg-gray-50">
+      <div className="hidden md:block fixed h-full">
+        <Sidebar />
+      </div>
       
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Topbar />
+      <div className="flex-1 md:ml-64 flex flex-col min-h-screen">
+        <div className="sticky top-0 z-10">
+          <Topbar />
+        </div>
         
-        <div className="flex-1 overflow-auto p-4">
-          <div className="space-y-4">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          <div className="max-w-7xl mx-auto space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Add New Shoe Size</CardTitle>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleAddSize} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="size">Size</Label>
                       <Input
@@ -91,6 +93,7 @@ export default function ShoeSizesPage() {
                         value={newSize.size}
                         onChange={(e) => setNewSize({...newSize, size: e.target.value})}
                         required
+                        disabled={isLoading}
                       />
                     </div>
                     <div className="space-y-2">
@@ -100,6 +103,7 @@ export default function ShoeSizesPage() {
                         value={newSize.description}
                         onChange={(e) => setNewSize({...newSize, description: e.target.value})}
                         required
+                        disabled={isLoading}
                       />
                     </div>
                   </div>
@@ -115,26 +119,46 @@ export default function ShoeSizesPage() {
                 <CardTitle>Available Shoe Sizes</CardTitle>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Size</TableHead>
-                      <TableHead>Description</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sizes.map((size) => (
-                      <TableRow key={size.id}>
-                        <TableCell>{size.size}</TableCell>
-                        <TableCell>{size.description}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                {isLoading ? (
+                  <div className="flex justify-center items-center h-32">
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                  </div>
+                ) : sizes.length > 0 ? (
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader className="bg-gray-100">
+                        <TableRow>
+                          <TableHead className="w-[30%]">Size</TableHead>
+                          <TableHead className="w-[70%]">Description</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {sizes.map((size) => (
+                          <TableRow key={size.id}>
+                            <TableCell className="font-medium">{size.size}</TableCell>
+                            <TableCell>{size.description || '-'}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <p className="text-gray-500 text-lg">No shoe sizes found</p>
+                    <Button 
+                      variant="outline" 
+                      className="mt-4"
+                      onClick={fetchSizes}
+                      disabled={isLoading}
+                    >
+                      Refresh
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
-        </div>
+        </main>
       </div>
     </div>
   )
