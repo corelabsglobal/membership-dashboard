@@ -39,22 +39,34 @@ export default function SignupPage() {
 
       if (authError) throw authError
 
-      // 2. Use the admin client to create the profile (bypasses RLS)
-      const { error: profileError } = await supabase
+      // 2. Check if profile already exists before creating
+      const { data: existingProfile, error: profileCheckError } = await supabase
         .from('profiles')
-        .insert({
-          id: authData.user.id,
-          email: formData.email,
-          is_admin: false
-        })
-        .select()
+        .select('id')
+        .eq('id', authData.user?.id)
+        .maybeSingle()
 
-      if (profileError) throw profileError
+      if (profileCheckError) throw profileCheckError
+
+      // 3. Only create profile if it doesn't exist
+      if (!existingProfile) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: authData.user?.id,
+            email: formData.email,
+            is_admin: true,
+            updated_at: new Date().toISOString()
+          })
+
+        if (profileError) throw profileError
+      }
 
       toast.success('Account created! Please check your email to confirm.')
       router.push('/login')
     } catch (error) {
       toast.error(error.message || 'Signup failed. Please try again.')
+      console.error('Signup error:', error)
     } finally {
       setLoading(false)
     }
