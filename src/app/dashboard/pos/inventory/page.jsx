@@ -125,7 +125,6 @@ export default function InventoryPage() {
                         step="0.5"
                         value={newItem.size}
                         onChange={(e) => setNewItem({...newItem, size: e.target.value})}
-                        required
                         disabled={isLoading}
                       />
                     </div>
