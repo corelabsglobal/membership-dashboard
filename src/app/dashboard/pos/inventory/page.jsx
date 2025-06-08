@@ -101,7 +101,7 @@ export default function InventoryPage() {
           <div className="max-w-7xl mx-auto space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Add New Skate</CardTitle>
+                <CardTitle>Add Inventory</CardTitle>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleAddItem} className="space-y-4">
@@ -113,6 +113,7 @@ export default function InventoryPage() {
                         value={newItem.name}
                         onChange={(e) => setNewItem({...newItem, name: e.target.value})}
                         required
+                        placeholder="Add Shin Pads, Helmets, etc"
                         disabled={isLoading}
                       />
                     </div>
@@ -142,7 +143,7 @@ export default function InventoryPage() {
                     </div>
                   </div>
                   <Button type="submit" disabled={isLoading}>
-                    {isLoading ? 'Adding...' : 'Add Skate'}
+                    {isLoading ? 'Adding...' : 'Add Inventory'}
                   </Button>
                 </form>
               </CardContent>
