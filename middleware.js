@@ -32,7 +32,6 @@ export async function middleware(req) {
     }
   }
 
-  // Auth routes (login/signup) - redirect if already logged in
   if (['/login', '/signup'].includes(req.nextUrl.pathname)) {
     if (session) {
       return NextResponse.redirect(new URL('/dashboard', req.url))
