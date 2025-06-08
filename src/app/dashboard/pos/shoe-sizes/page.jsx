@@ -102,7 +102,7 @@ export default function ShoeSizesPage() {
                         id="description"
                         value={newSize.description}
                         onChange={(e) => setNewSize({...newSize, description: e.target.value})}
-                        required
+                        placeholder="Optional"
                         disabled={isLoading}
                       />
                     </div>
