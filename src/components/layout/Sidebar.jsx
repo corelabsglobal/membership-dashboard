@@ -44,10 +44,10 @@ export function Sidebar() {
   const isPosActive = posItems.some(item => pathname === item.href)
 
   return (
-    <div className="hidden md:flex md:w-64 md:flex-col fixed h-full">
+    <div className="w-full h-full">
       <div className="flex flex-col h-full px-3 py-4 border-r bg-sidebar">
         <div className="flex items-center justify-center h-16 mb-6">
-          <h1 className="text-xl font-bold text-primary">FitClub</h1>
+          <h1 className="text-xl font-bold text-primary">Skate City</h1>
         </div>
         <div className="flex-grow">
           <nav className="flex-1 space-y-2">
