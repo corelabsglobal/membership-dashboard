@@ -234,6 +234,29 @@ export function PosInterface() {
         date: new Date()
       })
 
+      if (customer.email) {
+        const emailResponse = await fetch('/api/send-walkin-receipt', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            customerName: `${customer.firstName} ${customer.lastName}`,
+            email: customer.email,
+            transactionId,
+            items: availableItems.filter(item => selectedItems.includes(item.id)),
+            duration,
+            rate,
+            amount,
+            date: new Date()
+          }),
+        })
+
+        if (!emailResponse.ok) {
+          throw new Error('Failed to send receipt email')
+        }
+      }
+
       toast.success("Session created successfully")
       loadData()
     } catch (error) {
