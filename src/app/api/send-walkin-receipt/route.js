@@ -78,12 +78,6 @@ export async function POST(request) {
           
           <p style="margin-top: 20px;">We hope you enjoyed your time at Skate City!</p>
           
-          <div style="text-align: center; margin: 25px 0;">
-            <a href="https://skatecity.com" style="display: inline-block; padding: 12px 25px; background-color: #1a1a2e; color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">
-              Book Your Next Session
-            </a>
-          </div>
-          
           <p>If you have any questions about your visit, please reply to this email.</p>
           
           <p>Best regards,<br>The Skate City Team</p>
