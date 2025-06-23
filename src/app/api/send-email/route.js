@@ -34,12 +34,6 @@ export async function POST(request) {
             <p>Make the most of your remaining sessions!</p>
           `}
           
-          <div style="margin: 30px 0; text-align: center;">
-            <a href="https://skatecity.com" style="display: inline-block; padding: 12px 24px; background-color: #1a1a2e; color: white; text-decoration: none; border-radius: 4px;">
-              Visit Our Website
-            </a>
-          </div>
-          
           <p>If you have any questions about your membership, please don't hesitate to contact us.</p>
           
           <p>Best regards,<br>The Skate City Team</p>
