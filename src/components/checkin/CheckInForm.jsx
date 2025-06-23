@@ -115,6 +115,24 @@ export function CheckInForm() {
         
         setSubscription(data)
       }
+
+      const emailResponse = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          memberName: `${selectedMember.first_name} ${selectedMember.last_name}`,
+          email: selectedMember.email,
+          planName: subscription.membership_plans?.name,
+          remainingSessions: isUnlimitedSessions ? null : subscription.remaining_sessions - 1,
+          isUnlimited: isUnlimitedSessions
+        }),
+      })
+
+      if (!emailResponse.ok) {
+        throw new Error('Failed to send email')
+      }
       
       toast.success(
         isUnlimitedSessions 
