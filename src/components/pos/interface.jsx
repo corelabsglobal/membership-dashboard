@@ -235,6 +235,7 @@ export function PosInterface() {
       })
 
       if (customer.email) {
+        console.log('Attempting to send email to:', customer.email)
         const emailResponse = await fetch('/api/send-walkin-receipt', {
           method: 'POST',
           headers: {
@@ -251,6 +252,9 @@ export function PosInterface() {
             date: new Date()
           }),
         })
+
+        const emailResult = await emailResponse.json()
+        console.log('Email API response:', emailResult)
 
         if (!emailResponse.ok) {
           throw new Error('Failed to send receipt email')
