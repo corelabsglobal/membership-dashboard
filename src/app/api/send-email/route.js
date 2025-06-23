@@ -5,29 +5,14 @@ export async function POST(request) {
   try {
     const { memberName, email, planName, remainingSessions, isUnlimited } = await request.json()
 
-    // Create test account if in development
-    let transporter
-    if (process.env.NODE_ENV === 'development') {
-      const testAccount = await nodemailer.createTestAccount()
-      transporter = nodemailer.createTransport({
-        host: 'smtp.ethereal.email',
-        port: 587,
-        secure: false,
-        auth: {
-          user: testAccount.user,
-          pass: testAccount.pass
-        }
-      })
-    } else {
-      // Production configuration (using Gmail)
-      transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASSWORD,
-        },
-      })
-    }
+    // Create reusable transporter object
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASSWORD,
+      },
+    })
 
     // Email template
     const emailHtml = `
@@ -68,24 +53,16 @@ export async function POST(request) {
     `
 
     // Send mail
-    const info = await transporter.sendMail({
-      from: `"Skate City" <${process.env.NODE_ENV === 'development' ? 'test@ethereal.email' : process.env.EMAIL_USER}>`,
+    await transporter.sendMail({
+      from: `"Skate City" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: `Your Skate City Check-In Confirmation`,
       html: emailHtml,
     })
 
-    // In development, log the preview URL
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info))
-    }
-
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error sending email:', error)
-    return NextResponse.json({ 
-      error: 'Failed to send email',
-      details: error.message 
-    }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to send email' }, { status: 500 })
   }
 }
