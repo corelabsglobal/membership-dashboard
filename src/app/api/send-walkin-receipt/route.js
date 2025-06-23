@@ -50,7 +50,6 @@ export async function POST(request) {
                 ${items.map(item => `
                   <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
                     <span>${item.name} (Size: ${item.size})</span>
-                    <span>₵0.00</span>
                   </div>
                 `).join('')}
               </div>
