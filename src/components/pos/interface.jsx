@@ -98,61 +98,134 @@ export function PosInterface() {
         <head>
           <title>Receipt - ${receiptData.transactionId}</title>
           <style>
-            @page { size: 80mm auto; margin: 0; }
-            body { padding: 10px; font-family: Arial, sans-serif; width: 80mm; }
-            .header { text-align: center; margin-bottom: 10px; }
-            .divider { border-top: 1px dashed #000; margin: 10px 0; }
-            .item-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
-            .total-row { font-weight: bold; margin-top: 10px; }
-            .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #555; }
+            @page { 
+              size: 80mm auto; 
+              margin: 0;
+              margin-top: 5mm;
+              margin-bottom: 5mm;
+            }
+            body { 
+              width: 80mm;
+              margin: 0 auto;
+              padding: 0;
+              font-family: 'Courier New', monospace;
+              font-size: 12px;
+              line-height: 1.2;
+            }
+            .header { 
+              text-align: center; 
+              margin-bottom: 5px;
+              padding-bottom: 5px;
+              border-bottom: 1px dashed #000;
+            }
+            .header h2 {
+              margin: 0;
+              font-size: 16px;
+              font-weight: bold;
+            }
+            .header p {
+              margin: 2px 0;
+              font-size: 10px;
+            }
+            .divider { 
+              border-top: 1px dashed #000; 
+              margin: 5px 0; 
+            }
+            .section-title {
+              font-weight: bold;
+              margin: 5px 0;
+            }
+            .row { 
+              display: flex; 
+              justify-content: space-between;
+              margin: 3px 0;
+            }
+            .row.indent {
+              padding-left: 10px;
+            }
+            .total-row { 
+              font-weight: bold; 
+              margin-top: 8px;
+              border-top: 1px solid #000;
+              padding-top: 5px;
+            }
+            .footer { 
+              text-align: center; 
+              margin-top: 10px; 
+              font-size: 10px; 
+              border-top: 1px dashed #000;
+              padding-top: 5px;
+            }
+            .text-center {
+              text-align: center;
+            }
           </style>
         </head>
         <body>
           <div class="header">
-            <h2>FitClub</h2>
-            <p>123 Skating Ave, City</p>
+            <h2>SKATE CITY</h2>
+            <p>123 Skating Avenue</p>
+            <p>City, State 12345</p>
             <p>Tel: (123) 456-7890</p>
           </div>
           
-          <div class="divider"></div>
-          
-          <div class="item-row">
+          <div class="row">
             <span>Date:</span>
-            <span>${format(receiptData.date, 'PPpp')}</span>
+            <span>${format(receiptData.date, 'MM/dd/yyyy hh:mm a')}</span>
           </div>
-          <div class="item-row">
-            <span>Transaction:</span>
+          <div class="row">
+            <span>Receipt #:</span>
             <span>${receiptData.transactionId}</span>
           </div>
           
           <div class="divider"></div>
           
-          <h3>Customers:</h3>
+          <div class="section-title">CUSTOMERS</div>
           ${receiptData.customers.map((cust, index) => `
-            <p>${cust.name} - ${paymentPlans.find(plan => plan.id === cust.paymentPlanId)?.name || 'Custom'} (₵${cust.amount.toFixed(2)})</p>
+            <div class="row">
+              <span>${index === 0 ? 'Primary' : 'Additional'}:</span>
+              <span>${cust.name}</span>
+            </div>
+            <div class="row indent">
+              <span>Plan:</span>
+              <span>${paymentPlans.find(plan => plan.id === cust.paymentPlanId)?.name || 'Custom'}</span>
+            </div>
+            <div class="row indent">
+              <span>Amount:</span>
+              <span>₵${cust.amount.toFixed(2)}</span>
+            </div>
           `).join('')}
+          
+          ${receiptData.primaryShoeSize ? `
+            <div class="divider"></div>
+            <div class="section-title">SHOE SIZE</div>
+            <div class="row">
+              <span>Primary Customer:</span>
+              <span>${receiptData.primaryShoeSize}</span>
+            </div>
+          ` : ''}
           
           ${receiptData.items.length > 0 ? `
             <div class="divider"></div>
-            <h3>Equipment Rented:</h3>
+            <div class="section-title">EQUIPMENT RENTED</div>
             ${receiptData.items.map(item => `
-              <div class="item-row">
-                <span>${item.name} (Size: ${item.size})</span>
-                <span>₵0.00</span>
+              <div class="row">
+                <span>${item.name}</span>
+                <span>Size: ${item.size}</span>
               </div>
             `).join('')}
           ` : ''}
           
           <div class="divider"></div>
           
-          <div class="item-row total-row">
+          <div class="row total-row">
             <span>TOTAL:</span>
             <span>₵${receiptData.totalAmount.toFixed(2)}</span>
           </div>
           
           <div class="footer">
-            <p>Thank you for skating with us!</p>
-            <p>Please come again</p>
+            <div class="text-center">Thank you for skating with us!</div>
+            <div>Please come again</div>
           </div>
           
           <script>
@@ -232,6 +305,8 @@ export function PosInterface() {
           .in('id', selectedItems)
       }
 
+      const primarySize = shoeSizes.find(size => size.id === primaryCustomer.shoeSize)?.size || ''
+
       setReceiptData({
         transactionId,
         customers: [
@@ -247,6 +322,7 @@ export function PosInterface() {
           }))
         ],
         items: availableItems.filter(item => selectedItems.includes(item.id)),
+        primaryShoeSize: primarySize,
         totalAmount,
         date: new Date()
       })

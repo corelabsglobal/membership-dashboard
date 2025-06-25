@@ -70,7 +70,7 @@ export async function POST(request) {
             <div style="border-top: 2px solid #1a1a2e; padding-top: 10px; margin-top: 15px;">
               <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1em;">
                 <span>TOTAL:</span>
-                <span>₵${amount.toFixed(2)}</span>
+                <span>₵$${(items.amount ?? 0).toFixed(2)}</span>
               </div>
             </div>
           </div>
