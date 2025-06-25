@@ -11,24 +11,25 @@ import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 import { supabase } from '@/lib/supabase'
+import { Trash2 } from 'lucide-react'
 
 export function PosInterface() {
-  const [customer, setCustomer] = useState({
+  const [primaryCustomer, setPrimaryCustomer] = useState({
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
     shoeSize: ''
   })
+  const [additionalCustomers, setAdditionalCustomers] = useState([])
   const [selectedItems, setSelectedItems] = useState([])
-  const [duration, setDuration] = useState(60)
-  const [rate, setRate] = useState(200)
+  const [paymentPlans, setPaymentPlans] = useState([])
+  const [customerPayments, setCustomerPayments] = useState([])
   const [availableItems, setAvailableItems] = useState([])
   const [shoeSizes, setShoeSizes] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [receiptData, setReceiptData] = useState(null)
 
-  // Load initial data
   useEffect(() => {
     loadData()
   }, [])
@@ -36,12 +37,14 @@ export function PosInterface() {
   const loadData = async () => {
     try {
       setIsLoading(true)
-      const [{ data: inventory }, { data: sizes }] = await Promise.all([
+      const [{ data: inventory }, { data: sizes }, { data: plans }] = await Promise.all([
         supabase.from('skate_inventory').select('*').eq('is_available', true),
-        supabase.from('shoe_sizes').select('*')
+        supabase.from('shoe_sizes').select('*'),
+        supabase.from('payment_plans').select('*').eq('is_active', true)
       ])
       setAvailableItems(inventory || [])
       setShoeSizes(sizes || [])
+      setPaymentPlans(plans || [])
     } catch (error) {
       toast.error("Error loading data")
     } finally {
@@ -49,16 +52,44 @@ export function PosInterface() {
     }
   }
 
-  // Handle item selection
+  const addAdditionalCustomer = () => {
+    setAdditionalCustomers([...additionalCustomers, { name: '', paymentPlanId: '' }])
+    setCustomerPayments([...customerPayments, { paymentPlanId: '', amount: 0 }])
+  }
+
+  const updateAdditionalCustomer = (index, field, value) => {
+    const updatedCustomers = [...additionalCustomers]
+    updatedCustomers[index] = { ...updatedCustomers[index], [field]: value }
+    setAdditionalCustomers(updatedCustomers)
+
+    if (field === 'paymentPlanId') {
+      const selectedPlan = paymentPlans.find(plan => plan.id === value)
+      const updatedPayments = [...customerPayments]
+      updatedPayments[index + 1] = { paymentPlanId: value, amount: selectedPlan?.amount || 0 }
+      setCustomerPayments(updatedPayments)
+    }
+  }
+
+  const removeAdditionalCustomer = (index) => {
+    setAdditionalCustomers(additionalCustomers.filter((_, i) => i !== index))
+    setCustomerPayments(customerPayments.filter((_, i) => i !== index + 1))
+  }
+
   const toggleItemSelection = (itemId) => {
-    setSelectedItems(prev => 
-      prev.includes(itemId) 
-        ? prev.filter(id => id !== itemId) 
+    setSelectedItems(prev =>
+      prev.includes(itemId)
+        ? prev.filter(id => id !== itemId)
         : [...prev, itemId]
     )
   }
 
-  // Print receipt
+  const handlePrimaryPaymentChange = (planId) => {
+    const selectedPlan = paymentPlans.find(plan => plan.id === planId)
+    const updatedPayments = [...customerPayments]
+    updatedPayments[0] = { paymentPlanId: planId, amount: selectedPlan?.amount || 0 }
+    setCustomerPayments(updatedPayments)
+  }
+
   const handlePrintReceipt = () => {
     const printWindow = window.open('', '_blank')
     printWindow.document.write(`
@@ -67,12 +98,8 @@ export function PosInterface() {
         <head>
           <title>Receipt - ${receiptData.transactionId}</title>
           <style>
-            @page { size: 80mm 100mm; margin: 0; }
-            body { 
-              padding: 10px; 
-              font-family: Arial, sans-serif;
-              width: 80mm;
-            }
+            @page { size: 80mm auto; margin: 0; }
+            body { padding: 10px; font-family: Arial, sans-serif; width: 80mm; }
             .header { text-align: center; margin-bottom: 10px; }
             .divider { border-top: 1px dashed #000; margin: 10px 0; }
             .item-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
@@ -100,10 +127,10 @@ export function PosInterface() {
           
           <div class="divider"></div>
           
-          <h3>Customer:</h3>
-          <p>${receiptData.customer.name}</p>
-          ${receiptData.customer.email ? `<p>${receiptData.customer.email}</p>` : ''}
-          ${receiptData.customer.phone ? `<p>${receiptData.customer.phone}</p>` : ''}
+          <h3>Customers:</h3>
+          ${receiptData.customers.map((cust, index) => `
+            <p>${cust.name} - ${paymentPlans.find(plan => plan.id === cust.paymentPlanId)?.name || 'Custom'} (₵${cust.amount.toFixed(2)})</p>
+          `).join('')}
           
           ${receiptData.items.length > 0 ? `
             <div class="divider"></div>
@@ -118,21 +145,9 @@ export function PosInterface() {
           
           <div class="divider"></div>
           
-          <h3>Session Details:</h3>
-          <div class="item-row">
-            <span>Duration:</span>
-            <span>${receiptData.duration} minutes</span>
-          </div>
-          <div class="item-row">
-            <span>Rate:</span>
-            <span>₵${receiptData.rate}/hour</span>
-          </div>
-          
-          <div class="divider"></div>
-          
           <div class="item-row total-row">
             <span>TOTAL:</span>
-            <span>₵${receiptData.amount.toFixed(2)}</span>
+            <span>₵${receiptData.totalAmount.toFixed(2)}</span>
           </div>
           
           <div class="footer">
@@ -153,19 +168,17 @@ export function PosInterface() {
     setReceiptData(null)
   }
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault()
     setIsLoading(true)
-    
+
     try {
-      // 1. Create or find customer
       let customerId
-      if (customer.email || customer.phone) {
+      if (primaryCustomer.email || primaryCustomer.phone) {
         const { data: existingCustomer } = await supabase
           .from('walkin_customers')
           .select('id')
-          .or(`email.eq.${customer.email},phone.eq.${customer.phone}`)
+          .or(`email.eq.${primaryCustomer.email},phone.eq.${primaryCustomer.phone}`)
           .maybeSingle()
         
         if (existingCustomer) {
@@ -174,11 +187,11 @@ export function PosInterface() {
           const { data: newCustomer } = await supabase
             .from('walkin_customers')
             .insert([{
-              first_name: customer.firstName,
-              last_name: customer.lastName,
-              email: customer.email,
-              phone: customer.phone,
-              shoe_size_id: customer.shoeSize
+              first_name: primaryCustomer.firstName,
+              last_name: primaryCustomer.lastName,
+              email: primaryCustomer.email,
+              phone: primaryCustomer.phone,
+              shoe_size_id: primaryCustomer.shoeSize
             }])
             .select()
             .single()
@@ -186,32 +199,32 @@ export function PosInterface() {
         }
       }
 
-      // 2. Calculate amount
-      const amount = (duration / 60) * rate
+      const totalAmount = customerPayments.reduce((sum, payment) => sum + payment.amount, 0)
       const transactionId = `POS-${Date.now()}`
 
-      // 3. Create payment
       const { data: payment } = await supabase
         .from('payments')
         .insert([{
-          amount,
+          amount: totalAmount,
           payment_method: 'cash',
           transaction_id: transactionId
         }])
         .select()
         .single()
 
-      // 4. Create POS session
       await supabase
         .from('pos_sessions')
         .insert([{
           customer_id: customerId,
-          duration_minutes: duration,
-          amount_paid: amount,
-          payment_id: payment.id
+          amount_paid: totalAmount,
+          payment_id: payment.id,
+          additional_customers: additionalCustomers.map(cust => ({
+            name: cust.name,
+            payment_plan_id: cust.paymentPlanId,
+            amount: customerPayments.find(p => p.paymentPlanId === cust.paymentPlanId)?.amount || 0
+          }))
         }])
 
-      // 5. Update inventory availability for selected items
       if (selectedItems.length > 0) {
         await supabase
           .from('skate_inventory')
@@ -219,50 +232,53 @@ export function PosInterface() {
           .in('id', selectedItems)
       }
 
-      // Generate receipt data
       setReceiptData({
         transactionId,
-        customer: {
-          name: `${customer.firstName} ${customer.lastName}`,
-          email: customer.email,
-          phone: customer.phone
-        },
+        customers: [
+          {
+            name: `${primaryCustomer.firstName} ${primaryCustomer.lastName}`,
+            paymentPlanId: customerPayments[0]?.paymentPlanId,
+            amount: customerPayments[0]?.amount || 0
+          },
+          ...additionalCustomers.map((cust, index) => ({
+            name: cust.name,
+            paymentPlanId: cust.paymentPlanId,
+            amount: customerPayments[index + 1]?.amount || 0
+          }))
+        ],
         items: availableItems.filter(item => selectedItems.includes(item.id)),
-        duration,
-        rate,
-        amount,
+        totalAmount,
         date: new Date()
       })
 
-      if (customer.email) {
-        console.log('Attempting to send email to:', customer.email)
-        const emailResponse = await fetch('/api/send-walkin-receipt', {
+      if (primaryCustomer.email) {
+        await fetch('/api/send-walkin-receipt', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            customerName: `${customer.firstName} ${customer.lastName}`,
-            email: customer.email,
+            customerName: `${primaryCustomer.firstName} ${primaryCustomer.lastName}`,
+            email: primaryCustomer.email,
             transactionId,
+            customers: [
+              { name: `${primaryCustomer.firstName} ${primaryCustomer.lastName}`, amount: customerPayments[0]?.amount || 0 },
+              ...additionalCustomers.map((cust, index) => ({
+                name: cust.name,
+                amount: customerPayments[index + 1]?.amount || 0
+              }))
+            ],
             items: availableItems.filter(item => selectedItems.includes(item.id)),
-            duration,
-            rate,
-            amount,
+            totalAmount,
             date: new Date()
-          }),
+          })
         })
-
-        const emailResult = await emailResponse.json()
-        console.log('Email API response:', emailResult)
-
-        if (!emailResponse.ok) {
-          throw new Error('Failed to send receipt email')
-        }
       }
 
       toast.success("Session created successfully")
       loadData()
+      setPrimaryCustomer({ firstName: '', lastName: '', email: '', phone: '', shoeSize: '' })
+      setAdditionalCustomers([])
+      setCustomerPayments([])
+      setSelectedItems([])
     } catch (error) {
       toast.error("Error processing session")
       console.error(error)
@@ -279,66 +295,142 @@ export function PosInterface() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input
-                  id="firstName"
-                  value={customer.firstName}
-                  onChange={(e) => setCustomer({...customer, firstName: e.target.value})}
-                />
+            <div className="space-y-4">
+              <h3 className="font-medium">Primary Customer</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input
+                    id="firstName"
+                    value={primaryCustomer.firstName}
+                    onChange={(e) => setPrimaryCustomer({...primaryCustomer, firstName: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    value={primaryCustomer.lastName}
+                    onChange={(e) => setPrimaryCustomer({...primaryCustomer, lastName: e.target.value})}
+                    required
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input
-                  id="lastName"
-                  value={customer.lastName}
-                  onChange={(e) => setCustomer({...customer, lastName: e.target.value})}
-                />
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email (Optional)</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={primaryCustomer.email}
+                    onChange={(e) => setPrimaryCustomer({...primaryCustomer, email: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone (Optional)</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={primaryCustomer.phone}
+                    onChange={(e) => setPrimaryCustomer({...primaryCustomer, phone: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="shoeSize">Shoe Size</Label>
+                  <Select
+                    value={primaryCustomer.shoeSize}
+                    onValueChange={(value) => setPrimaryCustomer({...primaryCustomer, shoeSize: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select shoe size" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {shoeSizes.map((size) => (
+                        <SelectItem key={size.id} value={size.id}>
+                          {size.size} - {size.description}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="paymentPlan">Payment Plan</Label>
+                  <Select
+                    onValueChange={handlePrimaryPaymentChange}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select payment plan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {paymentPlans.map((plan) => (
+                        <SelectItem key={plan.id} value={plan.id}>
+                          {plan.name} - ₵{plan.amount}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email (Optional)</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={customer.email}
-                  onChange={(e) => setCustomer({...customer, email: e.target.value})}
-                />
+            <div className="space-y-4 mt-6">
+              <div className="flex justify-between items-center">
+                <h3 className="font-medium">Additional Customers</h3>
+                <Button type="button" variant="outline" onClick={addAdditionalCustomer}>
+                  Add Customer
+                </Button>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone (Optional)</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={customer.phone}
-                  onChange={(e) => setCustomer({...customer, phone: e.target.value})}
-                />
-              </div>
+              {additionalCustomers.map((cust, index) => (
+                <div key={index} className="grid grid-cols-12 gap-4 items-center p-4 bg-gray-50 rounded-md">
+                  <div className="col-span-5 space-y-2">
+                    <Label htmlFor={`additionalName-${index}`}>Name</Label>
+                    <Input
+                      id={`additionalName-${index}`}
+                      value={cust.name}
+                      onChange={(e) => updateAdditionalCustomer(index, 'name', e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="col-span-5 space-y-2">
+                    <Label htmlFor={`additionalPlan-${index}`}>Payment Plan</Label>
+                    <Select
+                      value={cust.paymentPlanId}
+                      onValueChange={(value) => updateAdditionalCustomer(index, 'paymentPlanId', value)}
+                      required
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select payment plan" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {paymentPlans.map((plan) => (
+                          <SelectItem key={plan.id} value={plan.id}>
+                            {plan.name} - ₵{plan.amount}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="col-span-2 flex items-end">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => removeAdditionalCustomer(index)}
+                      className="text-red-600"
+                    >
+                      <Trash2 size={20} />
+                    </Button>
+                  </div>
+                </div>
+              ))}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="shoeSize">Shoe Size</Label>
-              <Select
-                value={customer.shoeSize}
-                onValueChange={(value) => setCustomer({...customer, shoeSize: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select shoe size" />
-                </SelectTrigger>
-                <SelectContent>
-                  {shoeSizes.map((size) => (
-                    <SelectItem key={size.id} value={size.id}>
-                      {size.size} - {size.description}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
+            <div className="space-y-2 mt-6">
               <Label>Select Equipment (Optional)</Label>
               <div className="space-y-2 max-h-60 overflow-y-auto p-2 border rounded-md">
                 {availableItems.length > 0 ? (
@@ -365,39 +457,14 @@ export function PosInterface() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="duration">Duration (minutes)</Label>
-                <Input
-                  id="duration"
-                  type="number"
-                  min="15"
-                  step="15"
-                  value={duration}
-                  onChange={(e) => setDuration(parseInt(e.target.value))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="rate">Hourly Rate (₵)</Label>
-                <Input
-                  id="rate"
-                  type="number"
-                  min="1"
-                  step="0.5"
-                  value={rate}
-                  onChange={(e) => setRate(parseFloat(e.target.value))}
-                />
-              </div>
-            </div>
-
             <div className="pt-4">
               <div className="bg-gray-50 p-4 rounded-lg mb-4">
                 <div className="flex justify-between font-medium">
                   <span>Total:</span>
-                  <span>₵{((duration / 60) * rate).toFixed(2)}</span>
+                  <span>₵{customerPayments.reduce((sum, payment) => sum + payment.amount, 0).toFixed(2)}</span>
                 </div>
               </div>
-              <Button type="submit" disabled={isLoading} className="w-full">
+              <Button type="submit" disabled={isLoading || !customerPayments[0]?.paymentPlanId} className="w-full">
                 {isLoading ? 'Processing...' : 'Create Session & Process Payment'}
               </Button>
             </div>
@@ -405,7 +472,6 @@ export function PosInterface() {
         </CardContent>
       </Card>
 
-      {/* Receipt Modal */}
       {receiptData && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg max-w-md w-full">
@@ -426,10 +492,12 @@ export function PosInterface() {
               </div>
 
               <div className="mb-4">
-                <h3 className="font-medium mb-1">Customer:</h3>
-                <p>{receiptData.customer.name}</p>
-                {receiptData.customer.email && <p>{receiptData.customer.email}</p>}
-                {receiptData.customer.phone && <p>{receiptData.customer.phone}</p>}
+                <h3 className="font-medium mb-1">Customers:</h3>
+                {receiptData.customers.map((cust, index) => (
+                  <p key={index}>
+                    {cust.name} - {paymentPlans.find(plan => plan.id === cust.paymentPlanId)?.name || 'Custom'} (₵{cust.amount.toFixed(2)})
+                  </p>
+                ))}
               </div>
 
               {receiptData.items.length > 0 && (
@@ -446,22 +514,10 @@ export function PosInterface() {
                 </div>
               )}
 
-              <div className="mb-4">
-                <h3 className="font-medium mb-1">Session Details:</h3>
-                <div className="flex justify-between">
-                  <span>Duration:</span>
-                  <span>{receiptData.duration} minutes</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Rate:</span>
-                  <span>₵{receiptData.rate}/hour</span>
-                </div>
-              </div>
-
               <div className="border-t pt-2">
                 <div className="flex justify-between font-bold">
                   <span>TOTAL:</span>
-                  <span>₵{receiptData.amount.toFixed(2)}</span>
+                  <span>₵{receiptData.totalAmount.toFixed(2)}</span>
                 </div>
               </div>
 
