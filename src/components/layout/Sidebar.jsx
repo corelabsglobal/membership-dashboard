@@ -25,6 +25,11 @@ export function Sidebar() {
       icon: ShoppingCart,
     },
     { 
+      name: 'Prices', 
+      href: '/dashboard/pos/payment-plans', 
+      icon: CreditCard,
+    },
+    { 
       name: 'Customers', 
       href: '/dashboard/pos/customers', 
       icon: Users,
