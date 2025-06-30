@@ -48,7 +48,7 @@ export async function POST(request) {
               ${customers.map(customer => `
                 <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
                   <span>${customer.name}</span>
-                  <span>₵${customer.amount.toFixed(2)}</span>
+                  <span> - ₵${customer.amount.toFixed(2)}</span>
                 </div>
               `).join('')}
             </div>
