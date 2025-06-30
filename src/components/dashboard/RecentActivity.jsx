@@ -4,14 +4,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 export async function RecentActivity() {
   const { data: recentSessions, error } = await supabase
     .from('sessions')
-    .select(
+    .select(`
       id,
       check_in_time,
       subscriptions(
         members(first_name, last_name),
         membership_plans(name)
       )
-    )
+    `)
     .order('check_in_time', { ascending: false })
     .limit(5)
 
