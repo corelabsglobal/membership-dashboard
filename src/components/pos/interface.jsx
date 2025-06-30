@@ -641,7 +641,7 @@ export function PosInterface() {
           <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
             <div className="p-4">
               <div className="text-center mb-4">
-                <h2 className="text-xl font-bold">FitClub</h2>
+                <h2 className="text-xl font-bold">Skate City</h2>
                 <p className="text-sm text-gray-500">123 Skating Ave, City</p>
                 <p className="text-sm text-gray-500">Tel: (123) 456-7890</p>
               </div>

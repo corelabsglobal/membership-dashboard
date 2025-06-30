@@ -7,10 +7,9 @@ export async function POST(request) {
       customerName,
       email,
       transactionId,
+      customers,
       items,
-      duration,
-      rate,
-      amount,
+      totalAmount,
       date
     } = await request.json()
 
@@ -44,6 +43,16 @@ export async function POST(request) {
               <span>${new Date(date).toLocaleString()}</span>
             </div>
             
+            <div style="margin: 15px 0;">
+              <h3 style="border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px;">Customers</h3>
+              ${customers.map(customer => `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                  <span>${customer.name}</span>
+                  <span>₵${customer.amount.toFixed(2)}</span>
+                </div>
+              `).join('')}
+            </div>
+            
             ${items.length > 0 ? `
               <div style="margin: 15px 0;">
                 <h3 style="border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px;">Equipment Rented</h3>
@@ -55,22 +64,10 @@ export async function POST(request) {
               </div>
             ` : ''}
             
-            <div style="margin: 15px 0;">
-              <h3 style="border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px;">Session Details</h3>
-              <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                <span>Duration:</span>
-                <span>${duration} minutes</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                <span>Hourly Rate:</span>
-                <span>₵${rate}</span>
-              </div>
-            </div>
-            
             <div style="border-top: 2px solid #1a1a2e; padding-top: 10px; margin-top: 15px;">
               <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1em;">
                 <span>TOTAL:</span>
-                <span>₵$${(items.amount ?? 0).toFixed(2)}</span>
+                <span>₵${totalAmount.toFixed(2)}</span>
               </div>
             </div>
           </div>
