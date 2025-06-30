@@ -3,23 +3,21 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 export async function RecentActivity() {
   const today = new Date()
-  const yyyy = today.getFullYear()
-  const mm = String(today.getMonth() + 1).padStart(2, '0')
-  const dd = String(today.getDate()).padStart(2, '0')
-  const todayString = `${yyyy}-${mm}-${dd}`
+  today.setHours(0, 0, 0, 0)
+  const todayISO = today.toISOString()
 
   const { data: recentSessions, error } = await supabase
     .from('sessions')
-    .select(`
+    .select(
       id,
       check_in_time,
       subscriptions(
         members(first_name, last_name),
         membership_plans(name)
       )
-    `)
+    )
     .order('check_in_time', { ascending: false })
-    .filter('check_in_time', 'like', `${todayString}%`) 
+    .gte('check_in_time', todayISO)
 
   if (error) {
     console.error('Error fetching recent sessions:', error)
