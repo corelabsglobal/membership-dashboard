@@ -1,0 +1,16 @@
+ export const countryCodes = [
+    { code: '+1', name: 'USA/Canada' },
+    { code: '+44', name: 'UK' },
+    { code: '+233', name: 'Ghana' },
+    { code: '+234', name: 'Nigeria' },
+    { code: '+254', name: 'Kenya' },
+    { code: '+27', name: 'South Africa' },
+    { code: '+33', name: 'France' },
+    { code: '+49', name: 'Germany' },
+    { code: '+52', name: 'Mexico' },
+    { code: '+55', name: 'Brazil' },
+    { code: '+61', name: 'Australia' },
+    { code: '+81', name: 'Japan' },
+    { code: '+86', name: 'China' },
+    { code: '+91', name: 'India' },
+  ]
