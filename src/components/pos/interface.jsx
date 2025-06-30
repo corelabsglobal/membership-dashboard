@@ -352,6 +352,7 @@ export function PosInterface() {
           customer_id: customerId,
           amount_paid: totalAmount,
           payment_id: payment.id,
+          duration_minutes: 120,
           additional_customers: additionalCustomers.map(cust => ({
             name: cust.name,
             payment_plan_id: cust.paymentPlanId,
@@ -405,6 +406,8 @@ export function PosInterface() {
             ],
             items: availableItems.filter(item => selectedItems.includes(item.id)),
             totalAmount,
+            duration: 120,
+            rate: (customerPayments[0]?.amount || 0) / 2,
             date: new Date()
           })
         })
