@@ -62,6 +62,7 @@ export function PosDashboard() {
             <TableHeader>
               <TableRow>
                 <TableHead>Customer</TableHead>
+                <TableHead>Time</TableHead>
                 <TableHead>Duration</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
               </TableRow>
@@ -71,6 +72,13 @@ export function PosDashboard() {
                 <TableRow key={session.id}>
                   <TableCell>
                     {session.walkin_customers?.first_name} {session.walkin_customers?.last_name}
+                  </TableCell>
+                  <TableCell>
+                    {new Date(session.created_at).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: true
+                    })}
                   </TableCell>
                   <TableCell>{session.duration_minutes} min</TableCell>
                   <TableCell className="text-right">₵{session.amount_paid.toFixed(2)}</TableCell>

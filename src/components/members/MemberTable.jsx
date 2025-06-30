@@ -31,7 +31,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import jsPDF from 'jspdf'
-import 'jspdf-autotable'
 
 export function MemberTable() {
   const [members, setMembers] = useState([])
@@ -42,7 +41,6 @@ export function MemberTable() {
   useEffect(() => {
     const fetchMembers = async () => {
       try {
-        // Fetch members with their active subscriptions and plan details
         const { data, error } = await supabase
           .from('members')
           .select(`
@@ -77,7 +75,6 @@ export function MemberTable() {
     if (!memberToDelete) return
     
     try {
-      // First delete any active subscriptions
       const { error: subscriptionError } = await supabase
         .from('subscriptions')
         .delete()
@@ -85,7 +82,6 @@ export function MemberTable() {
       
       if (subscriptionError) throw subscriptionError
 
-      // Then delete the member
       const { error: memberError } = await supabase
         .from('members')
         .delete()
@@ -139,45 +135,71 @@ export function MemberTable() {
   }
 
   const exportToPDF = () => {
-    // Create a new jsPDF instance
-    const doc = new jsPDF()
-    
-    // Add title
-    doc.setFontSize(18)
-    doc.text('Member List', 14, 15)
-    
-    // Add current date
-    doc.setFontSize(10)
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 22)
-    
-    // Prepare data for the table
-    const tableData = members.map(member => [
-      `${member.first_name} ${member.last_name}`,
-      member.email || '-',
-      member.phone || '-',
-      new Date(member.created_at).toLocaleDateString()
-    ])
-    
-    // Add table using autoTable plugin
-    doc.autoTable({
-      head: [['Name', 'Email', 'Phone', 'Date Joined']],
-      body: tableData,
-      startY: 30,
-      theme: 'grid',
-      headStyles: {
-        fillColor: [41, 128, 185],
-        textColor: 255,
-        fontStyle: 'bold'
-      },
-      alternateRowStyles: {
-        fillColor: [245, 245, 245]
-      },
-      margin: { top: 30 }
-    })
-    
-    doc.save(`members_${new Date().toISOString().split('T')[0]}.pdf`)
-    
-    toast.success('PDF exported successfully')
+    try {
+      const doc = new jsPDF()
+      
+      // Add logo or header
+      doc.setFontSize(20)
+      doc.setTextColor(40, 40, 40)
+      doc.setFont('helvetica', 'bold')
+      doc.text('Gym Membership Report', 105, 20, { align: 'center' })
+      
+      // Add subtitle
+      doc.setFontSize(12)
+      doc.setTextColor(100, 100, 100)
+      doc.setFont('helvetica', 'normal')
+      doc.text(`Generated on ${new Date().toLocaleDateString()}`, 105, 28, { align: 'center' })
+      
+      // Add decorative line
+      doc.setDrawColor(200, 200, 200)
+      doc.line(20, 35, 190, 35)
+      
+      // Initial y position for member cards
+      let yPosition = 45
+      
+      // Add each member as a card
+      members.forEach((member, index) => {
+        // Add member card background
+        doc.setFillColor(245, 245, 245)
+        doc.roundedRect(20, yPosition, 170, 30, 3, 3, 'F')
+        
+        // Member name
+        doc.setFontSize(14)
+        doc.setTextColor(40, 40, 40)
+        doc.setFont('helvetica', 'bold')
+        doc.text(`${member.first_name} ${member.last_name}`, 25, yPosition + 10)
+        
+        // Contact info
+        doc.setFontSize(10)
+        doc.setTextColor(100, 100, 100)
+        doc.setFont('helvetica', 'normal')
+        doc.text(`Email: ${member.email || 'N/A'}`, 25, yPosition + 18)
+        doc.text(`Phone: ${member.phone || 'N/A'}`, 25, yPosition + 25)
+        
+        // Join date
+        doc.text(`Joined: ${new Date(member.created_at).toLocaleDateString()}`, 140, yPosition + 18)
+        
+        // Add decorative element
+        doc.setFillColor(41, 128, 185)
+        doc.roundedRect(160, yPosition + 5, 5, 20, 2, 2, 'F')
+        
+        yPosition += 35
+        
+        // Add new page if we're running out of space
+        if (yPosition > 250 && index < members.length - 1) {
+          doc.addPage()
+          yPosition = 20
+        }
+      })
+      
+      // Save the PDF
+      doc.save(`members_report_${new Date().toISOString().split('T')[0]}.pdf`)
+      
+      toast.success('PDF exported successfully')
+    } catch (error) {
+      console.error('Error generating PDF:', error)
+      toast.error('Failed to generate PDF')
+    }
   }
 
   if (loading) return <div className="py-4">Loading members...</div>
@@ -285,7 +307,6 @@ export function MemberTable() {
         </TableBody>
       </Table>
 
-      {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
