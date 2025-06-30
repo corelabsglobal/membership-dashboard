@@ -14,6 +14,30 @@ export async function POST(request) {
       },
     })
 
+    // Determine the appropriate message based on session count
+    let sessionMessage = ''
+    if (isUnlimited) {
+      sessionMessage = `
+        <p>You have an <strong>unlimited ${planName}</strong> membership.</p>
+        <p>Enjoy unlimited access to our facilities!</p>
+      `
+    } else if (remainingSessions > 0) {
+      sessionMessage = `
+        <p>Your <strong>${planName}</strong> membership has <strong>${remainingSessions} session(s)</strong> remaining.</p>
+        <p>Make the most of your remaining sessions!</p>
+      `
+    } else {
+      sessionMessage = `
+        <p>Your <strong>${planName}</strong> membership currently has <strong>0 sessions</strong> remaining.</p>
+        <p>To continue enjoying our facilities, please renew your membership or contact Skate City to discuss your options.</p>
+        <p style="text-align: center; margin-top: 20px;">
+          <a href="https://skatecity.com/renew" style="background-color: #1a1a2e; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
+            Renew Your Membership
+          </a>
+        </p>
+      `
+    }
+
     // Email template
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
@@ -26,13 +50,7 @@ export async function POST(request) {
           
           <p>Thank you for checking in at Skate City!</p>
           
-          ${isUnlimited ? `
-            <p>You have an <strong>unlimited ${planName}</strong> membership.</p>
-            <p>Enjoy unlimited access to our facilities!</p>
-          ` : `
-            <p>Your <strong>${planName}</strong> membership has <strong>${remainingSessions} session(s)</strong> remaining.</p>
-            <p>Make the most of your remaining sessions!</p>
-          `}
+          ${sessionMessage}
           
           <p>If you have any questions about your membership, please don't hesitate to contact us.</p>
           
@@ -50,7 +68,9 @@ export async function POST(request) {
     await transporter.sendMail({
       from: `"Skate City" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: `Your Skate City Check-In Confirmation`,
+      subject: remainingSessions === 0 && !isUnlimited 
+        ? `Important: Your Skate City Membership Needs Renewal` 
+        : `Your Skate City Check-In Confirmation`,
       html: emailHtml,
     })
 

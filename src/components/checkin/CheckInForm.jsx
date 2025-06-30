@@ -29,7 +29,7 @@ export function CheckInForm() {
         .from('members')
         .select('*, subscriptions(*, membership_plans(*))')
         .or(`first_name.ilike.%${term}%,last_name.ilike.%${term}%,email.ilike.%${term}%,phone.ilike.%${term}%`)
-        .limit(5) // Limit to 5 results for better UX
+        .limit(5)
       
       if (error) throw error
       
