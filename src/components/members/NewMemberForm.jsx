@@ -19,6 +19,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon, CreditCard } from 'lucide-react'
 import { format } from 'date-fns'
 import { Badge } from '@/components/ui/badge'
+import { CountryCodeSelect } from '../data/CountryCodeSelect'
+import { countryCodes } from '../data/CountryCodes'
 
 export function NewMemberForm() {
   const router = useRouter()
@@ -29,6 +31,7 @@ export function NewMemberForm() {
     last_name: '',
     email: '',
     phone: '',
+    phoneCountryCode: '+233',
     plan_id: null,
     start_date: new Date().toISOString(),
     payment_method: 'cash',
@@ -38,6 +41,8 @@ export function NewMemberForm() {
   })
   const [plans, setPlans] = useState([])
   const [selectedPlan, setSelectedPlan] = useState(null)
+  const [emailError, setEmailError] = useState('')
+  const [phoneError, setPhoneError] = useState('')
 
   useEffect(() => {
     const fetchPlans = async () => {
@@ -72,33 +77,64 @@ export function NewMemberForm() {
     }
   }, [formData.plan_id, plans])
 
+  const validateEmail = (email) => {
+    if (!email) {
+      setEmailError('Email is required')
+      return false
+    }
+    
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!re.test(email)) {
+      setEmailError('Please enter a valid email address')
+      return false
+    }
+    
+    setEmailError('')
+    return true
+  }
+
+  const validatePhone = (phone) => {
+    if (!phone) {
+      setPhoneError('Phone number is required')
+      return false
+    }
+    
+    const digits = phone.replace(/\D/g, '')
+    if (digits.length < 9) {
+      setPhoneError('Phone number must be at least 9 digits')
+      return false
+    }
+    
+    setPhoneError('')
+    return true
+  }
+
+  const handleEmailChange = (e) => {
+    const email = e.target.value
+    setFormData({...formData, email})
+    validateEmail(email)
+  }
+
+  const handlePhoneChange = (e) => {
+    const phone = e.target.value.replace(/[^\d]/g, '')
+    setFormData({...formData, phone})
+    validatePhone(phone)
+  }
+
+  const handleCountryCodeChange = (value) => {
+    setFormData({...formData, phoneCountryCode: value})
+  }
+
   const validateForm = () => {
-    if (!formData.email) {
-      toast.error('Email is required')
-      return false
-    }
-
-    if (!formData.phone) {
-      toast.error('Phone number is required')
-      return false
-    }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      toast.error('Please enter a valid email address')
-      return false
-    }
-
-    if (formData.phone.length < 9) {
-      toast.error('Please enter a valid phone number (at least 9 digits)')
-      return false
-    }
-
+    const isEmailValid = validateEmail(formData.email)
+    const isPhoneValid = validatePhone(formData.phone)
+    
     if (formData.plan_id && !formData.amount_paid) {
       toast.error('Payment amount is required when selecting a plan')
       return false
     }
 
-    return true
+    return isEmailValid && isPhoneValid
   }
 
   const handleSubmit = async (e) => {
@@ -111,7 +147,7 @@ export function NewMemberForm() {
     }
 
     try {
-      const formattedPhone = formData.phone.replace(/\D/g, '')
+      const fullPhoneNumber = `${formData.phoneCountryCode}${formData.phone.replace(/\D/g, '')}`
       const amount = parseFloat(formData.amount_paid) || 0
 
       // 1. Create member
@@ -121,7 +157,7 @@ export function NewMemberForm() {
           first_name: formData.first_name,
           last_name: formData.last_name,
           email: formData.email,
-          phone: formattedPhone
+          phone: fullPhoneNumber
         }])
         .select()
         .single()
@@ -181,7 +217,7 @@ export function NewMemberForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        {/* Personal Info Fields (same as before) */}
+        {/* Personal Info Fields */}
         <div>
           <Label htmlFor="first_name">First Name *</Label>
           <Input
@@ -206,21 +242,30 @@ export function NewMemberForm() {
             id="email"
             type="email"
             value={formData.email}
-            onChange={(e) => setFormData({...formData, email: e.target.value})}
+            onChange={handleEmailChange}
             required
             placeholder="example@domain.com"
           />
+          {emailError && <p className="text-sm text-red-500 mt-1">{emailError}</p>}
         </div>
         <div className="sm:col-span-2">
           <Label htmlFor="phone">Phone Number *</Label>
-          <Input
-            id="phone"
-            type="tel"
-            value={formData.phone}
-            onChange={(e) => setFormData({...formData, phone: e.target.value})}
-            required
-            placeholder="e.g., 0244123456"
-          />
+          <div className="flex gap-2">
+            <CountryCodeSelect
+              value={formData.phoneCountryCode}
+              onChange={handleCountryCodeChange}
+              countryCodes={countryCodes}
+            />
+            <Input
+              id="phone"
+              type="tel"
+              value={formData.phone}
+              onChange={handlePhoneChange}
+              required
+              placeholder="e.g., 0244123456"
+            />
+          </div>
+          {phoneError && <p className="text-sm text-red-500 mt-1">{phoneError}</p>}
         </div>
 
         {/* Membership Plan Selection */}
