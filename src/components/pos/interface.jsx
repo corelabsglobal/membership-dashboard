@@ -250,6 +250,13 @@ export function PosInterface() {
               <span>${receiptData.primaryShoeSize}</span>
             </div>
           ` : ''}
+
+          <div class="divider"></div>
+          <div class="section-title">SESSION DETAILS</div>
+          <div class="row">
+            <span>Duration:</span>
+            <span>2 hours</span>
+          </div>
           
           ${receiptData.items.length > 0 ? `
             <div class="divider"></div>
@@ -665,6 +672,19 @@ export function PosInterface() {
                     {cust.name} - {paymentPlans.find(plan => plan.id === cust.paymentPlanId)?.name || 'Custom'} (₵{cust.amount.toFixed(2)})
                   </p>
                 ))}
+              </div>
+
+              <div className="mb-4">
+                {receiptData.primaryShoeSize && (
+                  <>
+                    <h3 className="font-medium mb-1">Shoe Size:</h3>
+                    <p className="text-sm">
+                      Primary Customer: {receiptData.primaryShoeSize}
+                    </p>
+                  </>
+                )}
+                <h3 className="font-medium mb-1">Duration:</h3>
+                <p className="text-sm">2 hours</p>
               </div>
 
               {receiptData.items.length > 0 && (
