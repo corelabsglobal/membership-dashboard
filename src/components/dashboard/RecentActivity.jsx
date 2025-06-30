@@ -92,32 +92,43 @@ export function RecentActivity() {
             <TableRow>
               <TableHead className="w-[200px]">Member</TableHead>
               <TableHead>Plan</TableHead>
-              <TableHead className="text-right">Check-In Time</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead className="text-right">Time</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {currentSessions.length > 0 ? (
-              currentSessions.map((session) => (
-                <TableRow key={session.id}>
-                  <TableCell className="font-medium">
-                    {session.subscriptions?.members?.first_name}{' '}
-                    {session.subscriptions?.members?.last_name}
-                  </TableCell>
-                  <TableCell>
-                    {session.subscriptions?.membership_plans?.name}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {new Date(session.check_in_time).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      hour12: true
-                    })}
-                  </TableCell>
-                </TableRow>
-              ))
+              currentSessions.map((session) => {
+                const checkInDate = new Date(session.check_in_time)
+                return (
+                  <TableRow key={session.id}>
+                    <TableCell className="font-medium">
+                      {session.subscriptions?.members?.first_name}{' '}
+                      {session.subscriptions?.members?.last_name}
+                    </TableCell>
+                    <TableCell>
+                      {session.subscriptions?.membership_plans?.name}
+                    </TableCell>
+                    <TableCell>
+                      {checkInDate.toLocaleDateString([], {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      })}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {checkInDate.toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                      })}
+                    </TableCell>
+                  </TableRow>
+                )
+              })
             ) : (
               <TableRow>
-                <TableCell colSpan={3} className="text-center py-4 text-gray-500">
+                <TableCell colSpan={4} className="text-center py-4 text-gray-500">
                   No check-ins today
                 </TableCell>
               </TableRow>
