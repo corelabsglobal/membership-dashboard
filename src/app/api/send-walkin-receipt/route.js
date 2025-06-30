@@ -26,7 +26,7 @@ export async function POST(request) {
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
         <div style="background-color: #1a1a2e; padding: 20px; text-align: center;">
           <h1 style="color: #fff; margin: 0;">Skate City</h1>
-          <p style="color: #fff; margin: 5px 0 0;">123 Skate Avenue, Cityville, ST 12345</p>
+          <p style="color: #fff; margin: 5px 0 0;">Afrikiko Leisure Center</p>
         </div>
         
         <div style="padding: 20px; background-color: #f9f9f9;">
