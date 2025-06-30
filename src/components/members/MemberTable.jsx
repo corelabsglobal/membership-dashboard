@@ -142,7 +142,7 @@ export function MemberTable() {
       doc.setFontSize(20)
       doc.setTextColor(40, 40, 40)
       doc.setFont('helvetica', 'bold')
-      doc.text('Gym Membership Report', 105, 20, { align: 'center' })
+      doc.text('Skating Membership Report', 105, 20, { align: 'center' })
       
       // Add subtitle
       doc.setFontSize(12)
