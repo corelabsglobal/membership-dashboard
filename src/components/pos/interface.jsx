@@ -683,7 +683,7 @@ export function PosInterface() {
                     </p>
                   </>
                 )}
-                <h3 className="font-medium mb-1">Duration:</h3>
+                <h3 className="font-medium mb-1 mt-2">Duration:</h3>
                 <p className="text-sm">2 hours</p>
               </div>
 
