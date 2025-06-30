@@ -81,7 +81,7 @@ export async function POST(request) {
         
         <div style="background-color: #1a1a2e; padding: 15px; text-align: center; color: #fff; font-size: 12px;">
           <p>© ${new Date().getFullYear()} Skate City. All rights reserved.</p>
-          <p>123 Skate Avenue, Cityville, ST 12345 | (123) 456-7890</p>
+          <p>123 Skate City, Afrikiko Leisure Center, (233) 553-103-992</p>
         </div>
       </div>
     `
