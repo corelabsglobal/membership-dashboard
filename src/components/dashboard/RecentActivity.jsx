@@ -2,6 +2,10 @@ import { supabase } from '@/lib/supabase'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 export async function RecentActivity() {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const todayISO = today.toISOString()
+
   const { data: recentSessions, error } = await supabase
     .from('sessions')
     .select(`
@@ -13,7 +17,7 @@ export async function RecentActivity() {
       )
     `)
     .order('check_in_time', { ascending: false })
-    .limit(5)
+    .gte('check_in_time', todayISO)
 
   if (error) {
     console.error('Error fetching recent sessions:', error)
@@ -22,7 +26,7 @@ export async function RecentActivity() {
 
   return (
     <div className="mt-6">
-      <h2 className="text-lg font-semibold mb-4">Recent Check-Ins</h2>
+      <h2 className="text-lg font-semibold mb-4">Today's Check-Ins</h2>
       <div className="rounded-lg border">
         <Table>
           <TableHeader>
