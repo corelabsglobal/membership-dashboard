@@ -373,7 +373,7 @@ export function PosInterface() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-4">
               <h3 className="font-medium">Primary Customer</h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">First Name</Label>
                   <Input
@@ -394,7 +394,7 @@ export function PosInterface() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email (Optional)</Label>
                   <Input
@@ -415,14 +415,14 @@ export function PosInterface() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="shoeSize">Shoe Size</Label>
                   <Select
                     value={primaryCustomer.shoeSize}
                     onValueChange={(value) => setPrimaryCustomer({...primaryCustomer, shoeSize: value})}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select shoe size" />
                     </SelectTrigger>
                     <SelectContent>
@@ -440,7 +440,7 @@ export function PosInterface() {
                     onValueChange={handlePrimaryPaymentChange}
                     required
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select payment plan" />
                     </SelectTrigger>
                     <SelectContent>
@@ -456,15 +456,15 @@ export function PosInterface() {
             </div>
 
             <div className="space-y-4 mt-6">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2">
                 <h3 className="font-medium">Additional Customers</h3>
-                <Button type="button" variant="outline" onClick={addAdditionalCustomer}>
+                <Button type="button" variant="outline" onClick={addAdditionalCustomer} className="w-full md:w-auto">
                   Add Customer
                 </Button>
               </div>
               {additionalCustomers.map((cust, index) => (
-                <div key={index} className="grid grid-cols-12 gap-4 items-center p-4 bg-gray-50 rounded-md">
-                  <div className="col-span-5 space-y-2">
+                <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center p-4 bg-gray-50 rounded-md">
+                  <div className="md:col-span-5 space-y-2">
                     <Label htmlFor={`additionalName-${index}`}>Name</Label>
                     <Input
                       id={`additionalName-${index}`}
@@ -473,14 +473,14 @@ export function PosInterface() {
                       required
                     />
                   </div>
-                  <div className="col-span-5 space-y-2">
+                  <div className="md:col-span-5 space-y-2">
                     <Label htmlFor={`additionalPlan-${index}`}>Payment Plan</Label>
                     <Select
                       value={cust.paymentPlanId}
                       onValueChange={(value) => updateAdditionalCustomer(index, 'paymentPlanId', value)}
                       required
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select payment plan" />
                       </SelectTrigger>
                       <SelectContent>
@@ -492,10 +492,11 @@ export function PosInterface() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="col-span-2 flex items-end">
+                  <div className="md:col-span-2 flex items-end justify-end md:justify-start">
                     <Button
                       type="button"
                       variant="ghost"
+                      size="icon"
                       onClick={() => removeAdditionalCustomer(index)}
                       className="text-red-600"
                     >
@@ -518,9 +519,9 @@ export function PosInterface() {
                         onCheckedChange={() => toggleItemSelection(item.id)}
                       />
                       <Label htmlFor={`item-${item.id}`} className="flex-1 cursor-pointer">
-                        <div className="flex justify-between items-center">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
                           <span>{item.name} (Size: {item.size})</span>
-                          <Badge variant="outline" className="ml-2">
+                          <Badge variant="outline" className="sm:ml-2">
                             Qty: {item.quantity}
                           </Badge>
                         </div>
@@ -550,7 +551,7 @@ export function PosInterface() {
 
       {receiptData && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full">
+          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
             <div className="p-4">
               <div className="text-center mb-4">
                 <h2 className="text-xl font-bold">FitClub</h2>
@@ -570,7 +571,7 @@ export function PosInterface() {
               <div className="mb-4">
                 <h3 className="font-medium mb-1">Customers:</h3>
                 {receiptData.customers.map((cust, index) => (
-                  <p key={index}>
+                  <p key={index} className="text-sm">
                     {cust.name} - {paymentPlans.find(plan => plan.id === cust.paymentPlanId)?.name || 'Custom'} (₵{cust.amount.toFixed(2)})
                   </p>
                 ))}
@@ -581,7 +582,7 @@ export function PosInterface() {
                   <h3 className="font-medium mb-1">Equipment Rented:</h3>
                   <ul className="space-y-1">
                     {receiptData.items.map(item => (
-                      <li key={item.id} className="flex justify-between">
+                      <li key={item.id} className="flex justify-between text-sm">
                         <span>{item.name} (Size: {item.size})</span>
                         <span>₵0.00</span>
                       </li>
@@ -603,11 +604,11 @@ export function PosInterface() {
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 mt-4">
-              <Button variant="outline" onClick={() => setReceiptData(null)}>
+            <div className="flex flex-col sm:flex-row justify-end gap-2 mt-4">
+              <Button variant="outline" onClick={() => setReceiptData(null)} className="w-full sm:w-auto">
                 Close
               </Button>
-              <Button onClick={handlePrintReceipt}>
+              <Button onClick={handlePrintReceipt} className="w-full sm:w-auto">
                 Print Receipt
               </Button>
             </div>
