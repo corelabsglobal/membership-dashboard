@@ -21,6 +21,7 @@ export function PosInterface() {
     phone: '',
     shoeSize: ''
   })
+  const [emailError, setEmailError] = useState('')
   const [additionalCustomers, setAdditionalCustomers] = useState([])
   const [selectedItems, setSelectedItems] = useState([])
   const [paymentPlans, setPaymentPlans] = useState([])
@@ -33,6 +34,24 @@ export function PosInterface() {
   useEffect(() => {
     loadData()
   }, [])
+
+  const validateEmail = (email) => {
+    if (!email) return true
+    
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return re.test(email)
+  }
+
+  const handleEmailChange = (e) => {
+    const email = e.target.value
+    setPrimaryCustomer({...primaryCustomer, email})
+    
+    if (email && !validateEmail(email)) {
+      setEmailError('Please enter a valid email address')
+    } else {
+      setEmailError('')
+    }
+  }
 
   const loadData = async () => {
     try {
@@ -243,6 +262,12 @@ export function PosInterface() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    if (primaryCustomer.email && !validateEmail(primaryCustomer.email)) {
+      setEmailError('Please enter a valid email address')
+      return
+    }
+    
     setIsLoading(true)
 
     try {
@@ -401,8 +426,9 @@ export function PosInterface() {
                     id="email"
                     type="email"
                     value={primaryCustomer.email}
-                    onChange={(e) => setPrimaryCustomer({...primaryCustomer, email: e.target.value})}
+                    onChange={handleEmailChange}
                   />
+                  {emailError && <p className="text-sm text-red-500">{emailError}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone (Optional)</Label>
@@ -541,7 +567,7 @@ export function PosInterface() {
                   <span>₵{customerPayments.reduce((sum, payment) => sum + payment.amount, 0).toFixed(2)}</span>
                 </div>
               </div>
-              <Button type="submit" disabled={isLoading || !customerPayments[0]?.paymentPlanId} className="w-full">
+              <Button type="submit" disabled={isLoading || !customerPayments[0]?.paymentPlanId || (primaryCustomer.email && emailError)} className="w-full">
                 {isLoading ? 'Processing...' : 'Create Session & Process Payment'}
               </Button>
             </div>
