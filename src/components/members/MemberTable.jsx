@@ -1,4 +1,4 @@
-'use client'
+"use client"
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
@@ -11,7 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { Edit, Trash2 } from 'lucide-react'
+import { Edit, Trash2, Download } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -24,6 +24,14 @@ import {
 import { toast } from 'react-hot-toast'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import jsPDF from 'jspdf'
+import 'jspdf-autotable'
 
 export function MemberTable() {
   const [members, setMembers] = useState([])
@@ -96,10 +104,106 @@ export function MemberTable() {
     }
   }
 
+  const exportToCSV = () => {
+    const headers = ['Name', 'Email', 'Phone', 'Plan', 'Status', 'Date Joined']
+    const data = members.map(member => {
+      const activeSubscription = member.subscriptions?.[0]
+      const plan = activeSubscription?.membership_plans
+      const status = activeSubscription 
+        ? (plan.is_unlimited_sessions ? 'Unlimited' : `${activeSubscription.remaining_sessions} remaining`)
+        : 'Inactive'
+
+      return [
+        `${member.first_name} ${member.last_name}`,
+        member.email,
+        member.phone,
+        plan?.name || 'No plan',
+        status,
+        new Date(member.created_at).toLocaleDateString()
+      ]
+    })
+
+    const csvContent = [
+      headers.join(','),
+      ...data.map(row => row.join(','))
+    ].join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `members_${new Date().toISOString().split('T')[0]}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  const exportToPDF = () => {
+    // Create a new jsPDF instance
+    const doc = new jsPDF()
+    
+    // Add title
+    doc.setFontSize(18)
+    doc.text('Member List', 14, 15)
+    
+    // Add current date
+    doc.setFontSize(10)
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 22)
+    
+    // Prepare data for the table
+    const tableData = members.map(member => [
+      `${member.first_name} ${member.last_name}`,
+      member.email || '-',
+      member.phone || '-',
+      new Date(member.created_at).toLocaleDateString()
+    ])
+    
+    // Add table using autoTable plugin
+    doc.autoTable({
+      head: [['Name', 'Email', 'Phone', 'Date Joined']],
+      body: tableData,
+      startY: 30,
+      theme: 'grid',
+      headStyles: {
+        fillColor: [41, 128, 185],
+        textColor: 255,
+        fontStyle: 'bold'
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245]
+      },
+      margin: { top: 30 }
+    })
+    
+    doc.save(`members_${new Date().toISOString().split('T')[0]}.pdf`)
+    
+    toast.success('PDF exported successfully')
+  }
+
   if (loading) return <div className="py-4">Loading members...</div>
 
   return (
     <>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold">Members</h2>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="ml-auto">
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={exportToCSV}>
+              Export as CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={exportToPDF}>
+              Export as PDF
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       <Table>
         <TableHeader>
           <TableRow>
