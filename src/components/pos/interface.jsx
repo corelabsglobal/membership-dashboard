@@ -12,6 +12,8 @@ import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 import { supabase } from '@/lib/supabase'
 import { Trash2 } from 'lucide-react'
+import { countryCodes } from '../data/CountryCodes'
+import { CountryCodeSelect } from '../data/CountryCodeSelect'
 
 export function PosInterface() {
   const [primaryCustomer, setPrimaryCustomer] = useState({
@@ -19,9 +21,11 @@ export function PosInterface() {
     lastName: '',
     email: '',
     phone: '',
+    phoneCountryCode: '+233',
     shoeSize: ''
   })
   const [emailError, setEmailError] = useState('')
+  const [phoneError, setPhoneError] = useState('')
   const [additionalCustomers, setAdditionalCustomers] = useState([])
   const [selectedItems, setSelectedItems] = useState([])
   const [paymentPlans, setPaymentPlans] = useState([])
@@ -42,6 +46,13 @@ export function PosInterface() {
     return re.test(email)
   }
 
+  const validatePhone = (phone) => {
+    if (!phone) return true
+    
+    const digits = phone.replace(/\D/g, '')
+    return digits.length >= 7
+  }
+
   const handleEmailChange = (e) => {
     const email = e.target.value
     setPrimaryCustomer({...primaryCustomer, email})
@@ -51,6 +62,22 @@ export function PosInterface() {
     } else {
       setEmailError('')
     }
+  }
+
+  const handlePhoneChange = (e) => {
+    const phone = e.target.value
+    const cleanedValue = phone.replace(/[^\d+]/g, '')
+    setPrimaryCustomer({...primaryCustomer, phone: cleanedValue})
+    
+    if (phone && !validatePhone(phone)) {
+      setPhoneError('Please enter a valid phone number (at least 7 digits)')
+    } else {
+      setPhoneError('')
+    }
+  }
+
+  const handleCountryCodeChange = (value) => {
+    setPrimaryCustomer({...primaryCustomer, phoneCountryCode: value})
   }
 
   const loadData = async () => {
@@ -268,15 +295,24 @@ export function PosInterface() {
       return
     }
     
+    if (primaryCustomer.phone && !validatePhone(primaryCustomer.phone)) {
+      setPhoneError('Please enter a valid phone number (at least 7 digits)')
+      return
+    }
+    
     setIsLoading(true)
 
     try {
       let customerId
-      if (primaryCustomer.email || primaryCustomer.phone) {
+      const fullPhoneNumber = primaryCustomer.phone 
+        ? `${primaryCustomer.phoneCountryCode}${primaryCustomer.phone}`
+        : ''
+      
+      if (primaryCustomer.email || fullPhoneNumber) {
         const { data: existingCustomer } = await supabase
           .from('walkin_customers')
           .select('id')
-          .or(`email.eq.${primaryCustomer.email},phone.eq.${primaryCustomer.phone}`)
+          .or(`email.eq.${primaryCustomer.email},phone.eq.${fullPhoneNumber}`)
           .maybeSingle()
         
         if (existingCustomer) {
@@ -288,7 +324,7 @@ export function PosInterface() {
               first_name: primaryCustomer.firstName,
               last_name: primaryCustomer.lastName,
               email: primaryCustomer.email,
-              phone: primaryCustomer.phone,
+              phone: fullPhoneNumber,
               shoe_size_id: primaryCustomer.shoeSize
             }])
             .select()
@@ -376,7 +412,14 @@ export function PosInterface() {
 
       toast.success("Session created successfully")
       loadData()
-      setPrimaryCustomer({ firstName: '', lastName: '', email: '', phone: '', shoeSize: '' })
+      setPrimaryCustomer({ 
+        firstName: '', 
+        lastName: '', 
+        email: '', 
+        phone: '', 
+        phoneCountryCode: '+233',
+        shoeSize: '' 
+      })
       setAdditionalCustomers([])
       setCustomerPayments([])
       setSelectedItems([])
@@ -432,12 +475,21 @@ export function PosInterface() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone (Optional)</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={primaryCustomer.phone}
-                    onChange={(e) => setPrimaryCustomer({...primaryCustomer, phone: e.target.value})}
-                  />
+                  <div className="flex gap-2">
+                    <CountryCodeSelect
+                      value={primaryCustomer.phoneCountryCode}
+                      onChange={handleCountryCodeChange}
+                      countryCodes={countryCodes}
+                    />
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={primaryCustomer.phone}
+                      onChange={handlePhoneChange}
+                      placeholder="1234567890"
+                    />
+                  </div>
+                  {phoneError && <p className="text-sm text-red-500">{phoneError}</p>}
                 </div>
               </div>
 
@@ -567,7 +619,16 @@ export function PosInterface() {
                   <span>₵{customerPayments.reduce((sum, payment) => sum + payment.amount, 0).toFixed(2)}</span>
                 </div>
               </div>
-              <Button type="submit" disabled={isLoading || !customerPayments[0]?.paymentPlanId || (primaryCustomer.email && emailError)} className="w-full">
+              <Button 
+                type="submit" 
+                disabled={
+                  isLoading || 
+                  !customerPayments[0]?.paymentPlanId || 
+                  (primaryCustomer.email && emailError) ||
+                  (primaryCustomer.phone && phoneError)
+                } 
+                className="w-full"
+              >
                 {isLoading ? 'Processing...' : 'Create Session & Process Payment'}
               </Button>
             </div>
