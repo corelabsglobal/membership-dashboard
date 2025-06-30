@@ -3,8 +3,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 export async function RecentActivity() {
   const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const todayISO = today.toISOString()
+  const yyyy = today.getFullYear()
+  const mm = String(today.getMonth() + 1).padStart(2, '0')
+  const dd = String(today.getDate()).padStart(2, '0')
+  const todayString = `${yyyy}-${mm}-${dd}`
 
   const { data: recentSessions, error } = await supabase
     .from('sessions')
@@ -17,7 +19,7 @@ export async function RecentActivity() {
       )
     `)
     .order('check_in_time', { ascending: false })
-    .gte('check_in_time', todayISO)
+    .filter('check_in_time', 'like', `${todayString}%`) 
 
   if (error) {
     console.error('Error fetching recent sessions:', error)
