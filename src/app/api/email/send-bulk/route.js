@@ -69,7 +69,7 @@ export async function POST(req) {
         .replace(/{{expiry_date}}/g, member.expiry_date || '')
 
       return transporter.sendMail({
-        from: `"Skating Club" <${process.env.EMAIL_USER}>`,
+        from: `"Skate City" <${process.env.EMAIL_USER}>`,
         to: member.email,
         subject: subject,
         html: `
