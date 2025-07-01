@@ -9,6 +9,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
+import { Download } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import jsPDF from 'jspdf'
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState([])
@@ -49,6 +57,102 @@ export default function CustomersPage() {
     }
   }
 
+  const exportToCSV = () => {
+    const headers = ['Name', 'Email', 'Phone', 'First Visit', 'Total Visits']
+    const data = customers.map(customer => [
+      `${customer.first_name} ${customer.last_name}`,
+      customer.email || '-',
+      customer.phone || '-',
+      new Date(customer.created_at).toLocaleDateString(),
+      customer.visits_count || 0
+    ])
+
+    const csvContent = [
+      headers.join(','),
+      ...data.map(row => row.join(','))
+    ].join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `customers_${new Date().toISOString().split('T')[0]}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    toast.success('CSV exported successfully')
+  }
+
+  const exportToPDF = () => {
+    try {
+      const doc = new jsPDF()
+      
+      // Add header
+      doc.setFontSize(20)
+      doc.setTextColor(40, 40, 40)
+      doc.setFont('helvetica', 'bold')
+      doc.text('Customer Directory', 105, 20, { align: 'center' })
+      
+      // Add subtitle
+      doc.setFontSize(12)
+      doc.setTextColor(100, 100, 100)
+      doc.setFont('helvetica', 'normal')
+      doc.text(`Generated on ${new Date().toLocaleDateString()}`, 105, 28, { align: 'center' })
+      
+      // Add decorative line
+      doc.setDrawColor(200, 200, 200)
+      doc.line(20, 35, 190, 35)
+      
+      // Initial y position for customer cards
+      let yPosition = 45
+      
+      // Add each customer as a card
+      customers.forEach((customer, index) => {
+        // Skip to new page if we're running out of space
+        if (yPosition > 250 && index < customers.length - 1) {
+          doc.addPage()
+          yPosition = 20
+        }
+        
+        // Add customer card background
+        doc.setFillColor(245, 245, 245)
+        doc.roundedRect(20, yPosition, 170, 30, 3, 3, 'F')
+        
+        // Customer name
+        doc.setFontSize(14)
+        doc.setTextColor(40, 40, 40)
+        doc.setFont('helvetica', 'bold')
+        doc.text(`${customer.first_name} ${customer.last_name}`, 25, yPosition + 10)
+        
+        // Contact info
+        doc.setFontSize(10)
+        doc.setTextColor(100, 100, 100)
+        doc.setFont('helvetica', 'normal')
+        doc.text(`Email: ${customer.email || 'N/A'}`, 25, yPosition + 18)
+        doc.text(`Phone: ${customer.phone || 'N/A'}`, 25, yPosition + 25)
+        
+        // Visit info
+        doc.text(`First Visit: ${new Date(customer.created_at).toLocaleDateString()}`, 140, yPosition + 18)
+        doc.text(`Total Visits: ${customer.visits_count || 0}`, 140, yPosition + 25)
+        
+        // Add decorative element
+        doc.setFillColor(75, 192, 192)
+        doc.roundedRect(160, yPosition + 5, 5, 20, 2, 2, 'F')
+        
+        yPosition += 35
+      })
+      
+      // Save the PDF
+      doc.save(`customers_directory_${new Date().toISOString().split('T')[0]}.pdf`)
+      
+      toast.success('PDF exported successfully')
+    } catch (error) {
+      console.error('Error generating PDF:', error)
+      toast.error('Failed to generate PDF')
+    }
+  }
+
   return (
     <div className="flex min-h-screen bg-background">
       {/* Mobile sidebar overlay */}
@@ -72,8 +176,24 @@ export default function CustomersPage() {
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
           <div className="max-w-7xl mx-auto space-y-6">
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <CardTitle>Walk-In Customers</CardTitle>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="ml-auto">
+                      <Download className="w-4 h-4 mr-2" />
+                      Export
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={exportToCSV}>
+                      Export as CSV
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={exportToPDF}>
+                      Export as PDF
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col sm:flex-row items-center gap-4 mb-6">
