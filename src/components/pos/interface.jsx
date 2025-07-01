@@ -99,8 +99,15 @@ export function PosInterface() {
   }
 
   const addAdditionalCustomer = () => {
-    setAdditionalCustomers([...additionalCustomers, { name: '', paymentPlanId: '' }])
-    setCustomerPayments([...customerPayments, { paymentPlanId: '', amount: 0 }])
+    setAdditionalCustomers([...additionalCustomers, { 
+      name: '', 
+      paymentPlanId: '',
+      shoeSize: '' 
+    }])
+    setCustomerPayments([...customerPayments, { 
+      paymentPlanId: '', 
+      amount: 0 
+    }])
   }
 
   const updateAdditionalCustomer = (index, field, value) => {
@@ -111,7 +118,10 @@ export function PosInterface() {
     if (field === 'paymentPlanId') {
       const selectedPlan = paymentPlans.find(plan => plan.id === value)
       const updatedPayments = [...customerPayments]
-      updatedPayments[index + 1] = { paymentPlanId: value, amount: selectedPlan?.amount || 0 }
+      updatedPayments[index + 1] = { 
+        paymentPlanId: value, 
+        amount: selectedPlan?.amount || 0 
+      }
       setCustomerPayments(updatedPayments)
     }
   }
@@ -210,9 +220,8 @@ export function PosInterface() {
         <body>
           <div class="header">
             <h2>SKATE CITY</h2>
-            <p>123 Skating Avenue</p>
-            <p>City, State 12345</p>
-            <p>Tel: (123) 456-7890</p>
+            <p>Afrikiko Leisure Center</p>
+            <p>Tel: (233) 553-103-992</p>
           </div>
           
           <div class="row">
@@ -249,6 +258,20 @@ export function PosInterface() {
               <span>Primary Customer:</span>
               <span>${receiptData.primaryShoeSize}</span>
             </div>
+          ` : ''}
+
+          ${receiptData.customers.slice(1).some(c => c.shoeSize) ? `
+            <div class="divider"></div>
+            <div class="section-title">ADDITIONAL CUSTOMER SHOE SIZES</div>
+            ${receiptData.customers
+              .slice(1)
+              .filter(cust => cust.shoeSize)
+              .map(cust => `
+                <div class="row">
+                  <span>${cust.name}:</span>
+                  <span>${cust.shoeSize}</span>
+                </div>
+              `).join('')}
           ` : ''}
 
           <div class="divider"></div>
@@ -375,6 +398,10 @@ export function PosInterface() {
       }
 
       const primarySize = shoeSizes.find(size => size.id === primaryCustomer.shoeSize)?.size || ''
+      const additionalSizes = additionalCustomers.map(cust => ({
+        name: cust.name,
+        size: shoeSizes.find(size => size.id === cust.shoeSize)?.size || 'N/A'
+      }))
 
       setReceiptData({
         transactionId,
@@ -387,7 +414,8 @@ export function PosInterface() {
           ...additionalCustomers.map((cust, index) => ({
             name: cust.name,
             paymentPlanId: cust.paymentPlanId,
-            amount: customerPayments[index + 1]?.amount || 0
+            amount: customerPayments[index + 1]?.amount || 0,
+            shoeSize: shoeSizes.find(size => size.id === cust.shoeSize)?.size || 'N/A'
           }))
         ],
         items: availableItems.filter(item => selectedItems.includes(item.id)),
@@ -408,7 +436,8 @@ export function PosInterface() {
               { name: `${primaryCustomer.firstName} ${primaryCustomer.lastName}`, amount: customerPayments[0]?.amount || 0 },
               ...additionalCustomers.map((cust, index) => ({
                 name: cust.name,
-                amount: customerPayments[index + 1]?.amount || 0
+                amount: customerPayments[index + 1]?.amount || 0,
+                shoeSize: shoeSizes.find(size => size.id === cust.shoeSize)?.size || 'N/A'
               }))
             ],
             items: availableItems.filter(item => selectedItems.includes(item.id)),
@@ -552,7 +581,7 @@ export function PosInterface() {
               </div>
               {additionalCustomers.map((cust, index) => (
                 <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center p-4 bg-gray-50 rounded-md">
-                  <div className="md:col-span-5 space-y-2">
+                  <div className="md:col-span-3 space-y-2">
                     <Label htmlFor={`additionalName-${index}`}>Name</Label>
                     <Input
                       id={`additionalName-${index}`}
@@ -561,7 +590,25 @@ export function PosInterface() {
                       required
                     />
                   </div>
-                  <div className="md:col-span-5 space-y-2">
+                  <div className="md:col-span-3 space-y-2">
+                    <Label htmlFor={`additionalShoeSize-${index}`}>Shoe Size</Label>
+                    <Select
+                      value={cust.shoeSize}
+                      onValueChange={(value) => updateAdditionalCustomer(index, 'shoeSize', value)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select size" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {shoeSizes.map((size) => (
+                          <SelectItem key={size.id} value={size.id}>
+                            {size.size} - {size.description}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="md:col-span-4 space-y-2">
                     <Label htmlFor={`additionalPlan-${index}`}>Payment Plan</Label>
                     <Select
                       value={cust.paymentPlanId}
@@ -681,6 +728,16 @@ export function PosInterface() {
                     <p className="text-sm">
                       Primary Customer: {receiptData.primaryShoeSize}
                     </p>
+                    <ul className="space-y-1">
+                      {receiptData.customers
+                        .filter((_, index) => index > 0)
+                        .map((cust, index) => (
+                          <li key={index} className="text-sm">
+                            {cust.name}: {cust.shoeSize || 'Not specified'}
+                          </li>
+                        ))
+                      }
+                    </ul>
                   </>
                 )}
                 <h3 className="font-medium mb-1 mt-2">Duration:</h3>
