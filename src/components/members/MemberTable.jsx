@@ -138,19 +138,16 @@ export function MemberTable() {
     try {
       const doc = new jsPDF()
       
-      // Add logo or header
       doc.setFontSize(20)
       doc.setTextColor(40, 40, 40)
       doc.setFont('helvetica', 'bold')
       doc.text('Skating Membership Report', 105, 20, { align: 'center' })
       
-      // Add subtitle
       doc.setFontSize(12)
       doc.setTextColor(100, 100, 100)
       doc.setFont('helvetica', 'normal')
       doc.text(`Generated on ${new Date().toLocaleDateString()}`, 105, 28, { align: 'center' })
       
-      // Add decorative line
       doc.setDrawColor(200, 200, 200)
       doc.line(20, 35, 190, 35)
       
@@ -159,7 +156,11 @@ export function MemberTable() {
       
       // Add each member as a card
       members.forEach((member, index) => {
-        // Add member card background
+        if (yPosition > 250 && index < members.length - 1) {
+          doc.addPage()
+          yPosition = 20
+        }
+        
         doc.setFillColor(245, 245, 245)
         doc.roundedRect(20, yPosition, 170, 30, 3, 3, 'F')
         
@@ -176,20 +177,12 @@ export function MemberTable() {
         doc.text(`Email: ${member.email || 'N/A'}`, 25, yPosition + 18)
         doc.text(`Phone: ${member.phone || 'N/A'}`, 25, yPosition + 25)
         
-        // Join date
-        doc.text(`Joined: ${new Date(member.created_at).toLocaleDateString()}`, 140, yPosition + 18)
+        doc.text(`Joined: ${new Date(member.created_at).toLocaleDateString()}`, 130, yPosition + 18)
         
-        // Add decorative element
         doc.setFillColor(41, 128, 185)
-        doc.roundedRect(160, yPosition + 5, 5, 20, 2, 2, 'F')
+        doc.roundedRect(180, yPosition + 5, 3, 20, 1, 1, 'F')
         
         yPosition += 35
-        
-        // Add new page if we're running out of space
-        if (yPosition > 250 && index < members.length - 1) {
-          doc.addPage()
-          yPosition = 20
-        }
       })
       
       // Save the PDF

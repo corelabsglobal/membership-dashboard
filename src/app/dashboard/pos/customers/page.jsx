@@ -88,19 +88,16 @@ export default function CustomersPage() {
     try {
       const doc = new jsPDF()
       
-      // Add header
       doc.setFontSize(20)
       doc.setTextColor(40, 40, 40)
       doc.setFont('helvetica', 'bold')
       doc.text('Customer Directory', 105, 20, { align: 'center' })
       
-      // Add subtitle
       doc.setFontSize(12)
       doc.setTextColor(100, 100, 100)
       doc.setFont('helvetica', 'normal')
       doc.text(`Generated on ${new Date().toLocaleDateString()}`, 105, 28, { align: 'center' })
       
-      // Add decorative line
       doc.setDrawColor(200, 200, 200)
       doc.line(20, 35, 190, 35)
       
@@ -109,7 +106,6 @@ export default function CustomersPage() {
       
       // Add each customer as a card
       customers.forEach((customer, index) => {
-        // Skip to new page if we're running out of space
         if (yPosition > 250 && index < customers.length - 1) {
           doc.addPage()
           yPosition = 20
@@ -132,11 +128,9 @@ export default function CustomersPage() {
         doc.text(`Email: ${customer.email || 'N/A'}`, 25, yPosition + 18)
         doc.text(`Phone: ${customer.phone || 'N/A'}`, 25, yPosition + 25)
         
-        // Visit info - moved left slightly to avoid overlap
         doc.text(`First Visit: ${new Date(customer.created_at).toLocaleDateString()}`, 130, yPosition + 18)
         doc.text(`Total Visits: ${customer.visits_count || 0}`, 130, yPosition + 25)
         
-        // Add decorative element - moved to the far right and made slightly narrower
         doc.setFillColor(75, 192, 192)
         doc.roundedRect(180, yPosition + 5, 3, 20, 1, 1, 'F')
         
