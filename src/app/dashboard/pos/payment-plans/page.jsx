@@ -26,6 +26,8 @@ export default function PaymentPlansPage() {
   })
   const [editPlan, setEditPlan] = useState(null)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const pathname = usePathname()
 
   useEffect(() => {
@@ -69,6 +71,7 @@ export default function PaymentPlansPage() {
 
       toast.success("Payment plan added successfully")
       setNewPlan({ name: '', amount: '', description: '', is_active: true })
+      setIsAddDialogOpen(false)
       loadPlans()
     } catch (error) {
       toast.error("Error adding payment plan")
@@ -96,6 +99,7 @@ export default function PaymentPlansPage() {
 
       toast.success("Payment plan updated successfully")
       setEditPlan(null)
+      setIsEditDialogOpen(false)
       loadPlans()
     } catch (error) {
       toast.error("Error updating payment plan")
@@ -169,7 +173,7 @@ export default function PaymentPlansPage() {
                 <CardTitle>Manage Payment Plans</CardTitle>
               </CardHeader>
               <CardContent>
-                <Dialog>
+                <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                   <DialogTrigger asChild>
                     <Button className="mb-4">Add New Payment Plan</Button>
                   </DialogTrigger>
@@ -244,7 +248,7 @@ export default function PaymentPlansPage() {
                           />
                         </TableCell>
                         <TableCell>
-                          <Dialog>
+                          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                             <DialogTrigger asChild>
                               <Button variant="ghost" size="icon" onClick={() => setEditPlan(plan)}>
                                 <Edit size={20} />
