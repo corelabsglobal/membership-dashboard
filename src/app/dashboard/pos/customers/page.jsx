@@ -132,13 +132,13 @@ export default function CustomersPage() {
         doc.text(`Email: ${customer.email || 'N/A'}`, 25, yPosition + 18)
         doc.text(`Phone: ${customer.phone || 'N/A'}`, 25, yPosition + 25)
         
-        // Visit info
-        doc.text(`First Visit: ${new Date(customer.created_at).toLocaleDateString()}`, 140, yPosition + 18)
-        doc.text(`Total Visits: ${customer.visits_count || 0}`, 140, yPosition + 25)
+        // Visit info - moved left slightly to avoid overlap
+        doc.text(`First Visit: ${new Date(customer.created_at).toLocaleDateString()}`, 130, yPosition + 18)
+        doc.text(`Total Visits: ${customer.visits_count || 0}`, 130, yPosition + 25)
         
-        // Add decorative element
+        // Add decorative element - moved to the far right and made slightly narrower
         doc.setFillColor(75, 192, 192)
-        doc.roundedRect(160, yPosition + 5, 5, 20, 2, 2, 'F')
+        doc.roundedRect(180, yPosition + 5, 3, 20, 1, 1, 'F')
         
         yPosition += 35
       })
