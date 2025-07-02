@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
+import { EmailPreview } from './EmailPreview'
 
 export function EmailTemplates() {
   const [templates, setTemplates] = useState({
@@ -204,6 +205,11 @@ export function EmailTemplates() {
                   onChange={(e) => setTemplates({...templates, welcome: e.target.value})}
                   placeholder="Welcome {{member_name}} to our gym!..."
                 />
+                <EmailPreview 
+                  templateType={activeTab}
+                  content={templates.welcome}
+                  subject={emailSubject}
+                />
               </TabsContent>
             )}
 
@@ -218,6 +224,11 @@ export function EmailTemplates() {
                 >
                   Auto-select members with ≤3 sessions
                 </Button>
+                <EmailPreview 
+                  templateType={activeTab}
+                  content={templates.session_reminder}
+                  subject={emailSubject}
+                />
                 <Textarea
                   className="min-h-[200px]"
                   value={templates.session_reminder}
@@ -238,6 +249,11 @@ export function EmailTemplates() {
                 >
                   Auto-select expiring memberships
                 </Button>
+                <EmailPreview 
+                  templateType={activeTab}
+                  content={templates.membership_expiry}
+                  subject={emailSubject}
+                />
                 <Textarea
                   className="min-h-[200px]"
                   value={templates.membership_expiry}
@@ -250,6 +266,11 @@ export function EmailTemplates() {
             {activeTab === 'promo' && (
               <TabsContent value="promo" className="space-y-4">
                 <Label>Promotional Email Template</Label>
+                <EmailPreview 
+                  templateType={activeTab}
+                  content={templates.promo}
+                  subject={emailSubject}
+                />
                 <Textarea
                   className="min-h-[200px]"
                   value={templates.promo}
