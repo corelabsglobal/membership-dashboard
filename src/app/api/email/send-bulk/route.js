@@ -103,7 +103,7 @@ function generateEmailTemplate(content, templateType, memberName, subject) {
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Skate City Club</title>
+    <title>Skate City</title>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
       
@@ -204,7 +204,6 @@ function generateEmailTemplate(content, templateType, memberName, subject) {
     <div class="email-container">
       <div class="email-header">
         <!-- Replace with your actual logo URL -->
-        <img src="https://example.com/logo.png" alt="Skate City Club" class="email-logo">
         <h1>${subject}</h1>
       </div>
       
@@ -223,7 +222,7 @@ function generateEmailTemplate(content, templateType, memberName, subject) {
         
         ${templateType === 'membership_expiry' ? `
         <div class="highlight-box">
-          <strong>Renew today:</strong> Continue enjoying all the benefits of Skate City Club without interruption.
+          <strong>Renew today:</strong> Continue enjoying all the benefits of Skate City without interruption.
         </div>
         ` : ''}
         
@@ -254,15 +253,15 @@ function generateEmailTemplate(content, templateType, memberName, subject) {
             <img src="https://cdn-icons-png.flaticon.com/512/733/733579.png" width="24" alt="Twitter">
           </a>
         </div>
-        <p>© ${new Date().getFullYear()} Skate City Club. All rights reserved.</p>
+        <p>© ${new Date().getFullYear()} Skate City. All rights reserved.</p>
         <p>
-          123 Skate Avenue, Cityville<br>
-          <a href="mailto:info@skatecityclub.com" style="color: ${colors.primary};">info@skatecityclub.com</a> | 
-          <a href="https://skatecityclub.com" style="color: ${colors.primary};">www.skatecityclub.com</a>
+          Skate City, Afrikiko Leisure Center<br>
+          <a href="mailto:info@skatecityclub.com" style="color: ${colors.primary};">info@skatecity.com</a> | 
+          <a href="https://skatecityclub.com" style="color: ${colors.primary};">www.skatecity.com</a>
         </p>
         <p style="font-size: 11px; color: #9ca3af;">
           If you no longer wish to receive these emails, you can 
-          <a href="https://skatecityclub.com/unsubscribe" style="color: #9ca3af;">unsubscribe</a>.
+          <a href="https://skatecity.com/unsubscribe" style="color: #9ca3af;">unsubscribe</a>.
         </p>
       </div>
     </div>
