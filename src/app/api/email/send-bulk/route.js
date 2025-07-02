@@ -72,7 +72,7 @@ export async function POST(req) {
         from: `"Skate City" <${process.env.EMAIL_USER}>`,
         to: member.email,
         subject: subject,
-        html: generateEmailTemplate(emailContent, templateType, `${member.first_name} ${member.last_name}`)
+        html: generateEmailTemplate(emailContent, templateType, `${member.first_name} ${member.last_name}`, subject)
       })
     })
 
@@ -87,7 +87,7 @@ export async function POST(req) {
   }
 }
 
-function generateEmailTemplate(content, templateType, memberName) {
+function generateEmailTemplate(content, templateType, memberName, subject) {
   const templateColors = {
     welcome: { primary: '#4F46E5', secondary: '#6366F1' },
     session_reminder: { primary: '#10B981', secondary: '#34D399' },
