@@ -8,12 +8,19 @@ export function EmailPreview({ templateType, content, subject, memberName = "Joh
   const [open, setOpen] = useState(false)
 
   const generatePreviewHtml = () => {
-    const templateColors = {
+    {/*const templateColors = {
       welcome: { primary: '#4F46E5', secondary: '#6366F1' },
       session_reminder: { primary: '#10B981', secondary: '#34D399' },
       membership_expiry: { primary: '#F59E0B', secondary: '#FBBF24' },
       promo: { primary: '#EC4899', secondary: '#F472B6' }
+    }*/}
+    const templateColors = {
+      welcome: { primary: '#1a1a2e', secondary: '#1a1a2e' },
+      session_reminder: { primary: '#1a1a2e', secondary: '#1a1a2e' },
+      membership_expiry: { primary: '#1a1a2e', secondary: '#1a1a2e' },
+      promo: { primary: '#1a1a2e', secondary: '#1a1a2e' }
     }
+    
 
     const colors = templateColors[templateType] || templateColors.welcome
     const processedContent = content

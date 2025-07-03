@@ -134,9 +134,13 @@ export async function GET() {
 }
 
 function generateReminderTemplate(content, templateType, memberName, subject, remainingSessions = null, expiryDate = null) {
-  const templateColors = {
+  {/*const templateColors = {
     session_reminder: { primary: '#10B981', secondary: '#34D399' },
     membership_expiry: { primary: '#F59E0B', secondary: '#FBBF24' }
+  }*/}
+  const templateColors = {
+    session_reminder: { primary: '#1a1a2e', secondary: '#1a1a2e' },
+    membership_expiry: { primary: '#1a1a2e', secondary: '#1a1a2e' }
   }
 
   const colors = templateColors[templateType] || templateColors.session_reminder
