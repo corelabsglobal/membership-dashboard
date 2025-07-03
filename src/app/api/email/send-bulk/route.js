@@ -95,10 +95,10 @@ function generateEmailTemplate(content, templateType, memberName, subject) {
     promo: { primary: '#EC4899', secondary: '#F472B6' }
   }*/}
   const templateColors = {
-    welcome: { primary: '#1a1a2e', secondary: '#f9f9f9' },
-    session_reminder: { primary: '#1a1a2e', secondary: '#f9f9f9' },
-    membership_expiry: { primary: '#1a1a2e', secondary: '#f9f9f9' },
-    promo: { primary: '#1a1a2e', secondary: '#f9f9f9' }
+    welcome: { primary: '#1a1a2e', secondary: '#1a1a2e' },
+    session_reminder: { primary: '#1a1a2e', secondary: '#1a1a2e' },
+    membership_expiry: { primary: '#1a1a2e', secondary: '#1a1a2e' },
+    promo: { primary: '#1a1a2e', secondary: '#1a1a2e' }
   }
 
   const colors = templateColors[templateType] || templateColors.welcome
