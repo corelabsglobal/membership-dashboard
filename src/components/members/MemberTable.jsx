@@ -267,7 +267,7 @@ export function MemberTable() {
                         </span>
                         {hasNoSessionsLeft && (
                           <Badge variant="destructive" className="text-xs">
-                            Inactive - Renew Needed
+                            Inactive - Renew
                           </Badge>
                         )}
                       </div>

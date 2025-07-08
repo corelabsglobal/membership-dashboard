@@ -245,6 +245,7 @@ export default function InventoryPage() {
                               <Button 
                                 variant="outline" 
                                 size="sm"
+                                className="w-32"
                                 onClick={() => toggleAvailability(item.id, item.is_available)}
                                 disabled={isUpdating}
                               >
@@ -253,6 +254,7 @@ export default function InventoryPage() {
                               <Button
                                 variant="destructive"
                                 size="sm"
+                                className="w-10 p-0"
                                 onClick={() => handleDeleteClick(item)}
                                 disabled={isUpdating || isDeleting}
                               >
