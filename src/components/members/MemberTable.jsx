@@ -235,6 +235,9 @@ export function MemberTable() {
           {members.map((member) => {
             const activeSubscription = member.subscriptions?.[0]
             const plan = activeSubscription?.membership_plans
+            const hasNoSessionsLeft = activeSubscription && 
+                                    !plan.is_unlimited_sessions && 
+                                    activeSubscription.remaining_sessions <= 0
             
             return (
               <TableRow key={member.id}>
@@ -256,11 +259,18 @@ export function MemberTable() {
                 <TableCell>
                   {activeSubscription ? (
                     <div className="flex flex-col">
-                      <span>
-                        {plan.is_unlimited_sessions 
-                          ? 'Unlimited sessions' 
-                          : `${activeSubscription.remaining_sessions} remaining`}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span>
+                          {plan.is_unlimited_sessions 
+                            ? 'Unlimited sessions' 
+                            : `${activeSubscription.remaining_sessions} remaining`}
+                        </span>
+                        {hasNoSessionsLeft && (
+                          <Badge variant="destructive" className="text-xs">
+                            Inactive - Renew Needed
+                          </Badge>
+                        )}
+                      </div>
                       <span className="text-xs text-muted-foreground">
                         {new Date(activeSubscription.start_date).toLocaleDateString()} -{' '}
                         {activeSubscription.end_date 
