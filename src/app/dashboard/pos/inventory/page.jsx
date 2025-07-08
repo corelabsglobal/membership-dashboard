@@ -10,6 +10,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
+import { Trash2 } from 'lucide-react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 export default function InventoryPage() {
   const [inventory, setInventory] = useState([])
@@ -21,6 +32,9 @@ export default function InventoryPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [itemToDelete, setItemToDelete] = useState(null)
 
   useEffect(() => {
     fetchInventory()
@@ -88,6 +102,34 @@ export default function InventoryPage() {
       toast.error("Error updating item")
     } finally {
       setIsUpdating(false)
+    }
+  }
+
+  const handleDeleteClick = (item) => {
+    setItemToDelete(item)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!itemToDelete) return
+    
+    try {
+      setIsDeleting(true)
+      const { error } = await supabase
+        .from('skate_inventory')
+        .delete()
+        .eq('id', itemToDelete.id)
+      
+      if (error) throw error
+      
+      toast.success("Item deleted successfully")
+      fetchInventory()
+    } catch (error) {
+      toast.error("Error deleting item")
+    } finally {
+      setIsDeleting(false)
+      setDeleteDialogOpen(false)
+      setItemToDelete(null)
     }
   }
 
@@ -199,7 +241,7 @@ export default function InventoryPage() {
                                 {item.is_available ? 'Available' : 'Unavailable'}
                               </span>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="flex space-x-2">
                               <Button 
                                 variant="outline" 
                                 size="sm"
@@ -207,6 +249,14 @@ export default function InventoryPage() {
                                 disabled={isUpdating}
                               >
                                 {item.is_available ? 'Mark Unavailable' : 'Mark Available'}
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDeleteClick(item)}
+                                disabled={isUpdating || isDeleting}
+                              >
+                                <Trash2 className="h-4 w-4" />
                               </Button>
                             </TableCell>
                           </TableRow>
@@ -232,6 +282,28 @@ export default function InventoryPage() {
           </div>
         </main>
       </div>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the inventory item: <strong>{itemToDelete?.name}</strong> (Size: {itemToDelete?.size}).
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
