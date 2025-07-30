@@ -89,7 +89,16 @@ export function PosInterface() {
         supabase.from('payment_plans').select('*').eq('is_active', true)
       ])
       setAvailableItems(inventory || [])
-      setShoeSizes(sizes || [])
+      
+      // Sort shoe sizes in ascending order by converting size to number and comparing
+      const sortedSizes = (sizes || []).sort((a, b) => {
+        // Handle cases where size might be a range (e.g., "4-5")
+        const sizeA = parseFloat(a.size.split('-')[0])
+        const sizeB = parseFloat(b.size.split('-')[0])
+        return sizeA - sizeB
+      })
+      setShoeSizes(sortedSizes)
+      
       setPaymentPlans(plans || [])
     } catch (error) {
       toast.error("Error loading data")
