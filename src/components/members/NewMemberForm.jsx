@@ -204,6 +204,31 @@ export function NewMemberForm() {
         }
       }
 
+      if (formData.email) {
+        try {
+          const response = await fetch('/api/send-welcome-email', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              memberName: `${formData.first_name} ${formData.last_name}`,
+              email: formData.email,
+              planName: planName,
+              startDate: date.toISOString(),
+              endDate: endDate?.toISOString()
+            })
+          })
+
+          if (!response.ok) {
+            throw new Error('Failed to send welcome email')
+          }
+        } catch (emailError) {
+          console.error('Email sending error:', emailError)
+          toast.error('Member registered but welcome email failed to send')
+        }
+      }
+
       toast.success('Member registered successfully!')
       router.push('/dashboard/members')
     } catch (error) {
