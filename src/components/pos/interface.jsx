@@ -391,10 +391,28 @@ export function PosInterface() {
         }])
 
       if (selectedItems.length > 0) {
-        await supabase
-          .from('skate_inventory')
-          .update({ is_available: false })
-          .in('id', selectedItems)
+        for (const itemId of selectedItems) {
+          const { data: itemData, error } = await supabase
+            .from('skate_inventory')
+            .select('quantity')
+            .eq('id', itemId)
+            .single()
+
+          if (error) {
+            console.error('Error fetching item quantity:', error)
+            continue
+          }
+
+          const newQuantity = itemData.quantity - 1
+
+          await supabase
+            .from('skate_inventory')
+            .update({
+              quantity: newQuantity,
+              is_available: newQuantity > 0
+            })
+            .eq('id', itemId)
+        }
       }
 
       const primarySize = shoeSizes.find(size => size.id === primaryCustomer.shoeSize)?.size || ''
