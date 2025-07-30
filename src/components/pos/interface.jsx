@@ -543,10 +543,16 @@ export function PosInterface() {
                       <SelectValue placeholder="Select shoe size" />
                     </SelectTrigger>
                     <SelectContent>
-                      {shoeSizes.map((size) => (
-                        <SelectItem key={size.id} value={size.id}>
-                          {size.size} - {size.description}
-                        </SelectItem>
+                      {shoeSizes
+                        .sort((a, b) => {
+                          const sizeA = parseFloat(String(a.size).split(' ')[0]);
+                          const sizeB = parseFloat(String(b.size).split(' ')[0]);
+                          return sizeA - sizeB;
+                        })
+                        .map((size) => (
+                          <SelectItem key={size.id} value={size.id}>
+                            {size.size} - {size.description}
+                          </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
