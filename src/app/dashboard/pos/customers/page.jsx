@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
-import { Download } from 'lucide-react'
+import { Download, Edit, Loader2 } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,12 +17,23 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import jsPDF from 'jspdf'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [editingCustomer, setEditingCustomer] = useState(null)
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     fetchCustomers()
@@ -55,6 +66,47 @@ export default function CustomersPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleEditClick = (customer) => {
+    setEditingCustomer(customer)
+    setIsEditDialogOpen(true)
+  }
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault()
+    if (!editingCustomer) return
+
+    try {
+      setIsSaving(true)
+      const { error } = await supabase
+        .from('walkin_customers')
+        .update({
+          first_name: editingCustomer.first_name,
+          last_name: editingCustomer.last_name,
+          email: editingCustomer.email,
+          phone: editingCustomer.phone
+        })
+        .eq('id', editingCustomer.id)
+
+      if (error) throw error
+
+      toast.success('Customer updated successfully')
+      setIsEditDialogOpen(false)
+      fetchCustomers()
+    } catch (error) {
+      toast.error('Error updating customer')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target
+    setEditingCustomer(prev => ({
+      ...prev,
+      [name]: value
+    }))
   }
 
   const exportToCSV = () => {
@@ -219,7 +271,8 @@ export default function CustomersPage() {
                           <TableHead className="w-[25%]">Email</TableHead>
                           <TableHead className="w-[20%]">Phone</TableHead>
                           <TableHead className="w-[15%]">First Visit</TableHead>
-                          <TableHead className="w-[15%] text-right">Visits</TableHead>
+                          <TableHead className="w-[10%] text-right">Visits</TableHead>
+                          <TableHead className="w-[5%] text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -235,6 +288,15 @@ export default function CustomersPage() {
                             </TableCell>
                             <TableCell className="text-right">
                               {customer.visits_count || 0}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleEditClick(customer)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -258,6 +320,85 @@ export default function CustomersPage() {
           </div>
         </main>
       </div>
+
+      {/* Edit Customer Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Customer</DialogTitle>
+          </DialogHeader>
+          {editingCustomer && (
+            <form onSubmit={handleEditSubmit}>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="first_name" className="text-right">
+                    First Name
+                  </Label>
+                  <Input
+                    id="first_name"
+                    name="first_name"
+                    value={editingCustomer.first_name || ''}
+                    onChange={handleInputChange}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="last_name" className="text-right">
+                    Last Name
+                  </Label>
+                  <Input
+                    id="last_name"
+                    name="last_name"
+                    value={editingCustomer.last_name || ''}
+                    onChange={handleInputChange}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="email" className="text-right">
+                    Email
+                  </Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={editingCustomer.email || ''}
+                    onChange={handleInputChange}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="phone" className="text-right">
+                    Phone
+                  </Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    value={editingCustomer.phone || ''}
+                    onChange={handleInputChange}
+                    className="col-span-3"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSaving}>
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
