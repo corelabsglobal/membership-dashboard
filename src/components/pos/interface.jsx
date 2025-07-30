@@ -496,7 +496,6 @@ export function PosInterface() {
                     id="lastName"
                     value={primaryCustomer.lastName}
                     onChange={(e) => setPrimaryCustomer({...primaryCustomer, lastName: e.target.value})}
-                    required
                   />
                 </div>
               </div>
