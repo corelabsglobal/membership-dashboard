@@ -29,7 +29,11 @@ export async function POST(request) {
             <ul>
               <li><strong>Plan:</strong> ${planName}</li>
               <li><strong>Start Date:</strong> ${new Date(startDate).toLocaleDateString()}</li>
-              <li><strong>End Date:</strong> ${new Date(endDate).toLocaleDateString()}</li>
+              ${endDate ? `
+                <li><strong>End Date:</strong> ${new Date(endDate).toLocaleDateString()}</li>
+              ` : `
+                <li><strong>Duration:</strong> Unlimited</li>
+              `}
             </ul>
           ` : `
             <p>You're registered as a member without a specific plan. Feel free to purchase a plan anytime to enjoy our facilities!</p>

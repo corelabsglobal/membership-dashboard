@@ -216,7 +216,7 @@ export function NewMemberForm() {
               email: formData.email,
               planName: selectedPlan?.name || null,
               startDate: date.toISOString(),
-              endDate: endDate?.toISOString()
+              endDate: selectedPlan?.is_unlimited_sessions ? null : endDate?.toISOString() || null
             })
           })
 
