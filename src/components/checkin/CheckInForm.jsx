@@ -143,6 +143,7 @@ export function CheckInForm() {
       // Reset form after successful check-in
       setSelectedMember(null)
       setSearchTerm('')
+      window.location.reload()
     } catch (error) {
       console.error('Error checking in:', error)
       toast.error('Failed to record check-in')
