@@ -214,7 +214,7 @@ export function NewMemberForm() {
             body: JSON.stringify({
               memberName: `${formData.first_name} ${formData.last_name}`,
               email: formData.email,
-              planName: planName,
+              planName: selectedPlan?.name || null,
               startDate: date.toISOString(),
               endDate: endDate?.toISOString()
             })
