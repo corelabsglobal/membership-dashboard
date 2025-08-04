@@ -8,8 +8,10 @@ import { Topbar } from '@/components/layout/Topbar'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
+import { Trash2, PlusCircle, RefreshCw } from 'lucide-react'
 
 export default function ShoeSizesPage() {
   const [sizes, setSizes] = useState([])
@@ -19,6 +21,8 @@ export default function ShoeSizesPage() {
   })
   const [isLoading, setIsLoading] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [deletingId, setDeletingId] = useState(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
   useEffect(() => {
     fetchSizes()
@@ -69,8 +73,60 @@ export default function ShoeSizesPage() {
     }
   }
 
+  const openDeleteDialog = (id) => {
+    setDeletingId(id)
+    setIsDeleteDialogOpen(true)
+  }
+
+  const handleDeleteSize = async () => {
+    if (!deletingId) return
+    
+    try {
+      const { error } = await supabase
+        .from('shoe_sizes')
+        .delete()
+        .eq('id', deletingId)
+      
+      if (error) throw error
+      
+      toast.success("Size deleted successfully")
+      fetchSizes()
+    } catch (error) {
+      toast.error("Error deleting size")
+    } finally {
+      setDeletingId(null)
+      setIsDeleteDialogOpen(false)
+    }
+  }
+
   return (
     <div className="flex min-h-screen bg-background">
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the shoe size from our database.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteSize}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deletingId ? (
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="mr-2 h-4 w-4" />
+              )}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Mobile sidebar overlay */}
       {isSidebarOpen && (
         <div 
@@ -123,6 +179,11 @@ export default function ShoeSizesPage() {
                     </div>
                   </div>
                   <Button type="submit" disabled={isLoading}>
+                    {isLoading ? (
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                    )}
                     {isLoading ? 'Adding...' : 'Add Size'}
                   </Button>
                 </form>
@@ -134,17 +195,18 @@ export default function ShoeSizesPage() {
                 <CardTitle>Available Shoe Sizes</CardTitle>
               </CardHeader>
               <CardContent>
-                {isLoading ? (
+                {isLoading && !deletingId ? (
                   <div className="flex justify-center items-center h-32">
-                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                    <RefreshCw className="h-8 w-8 animate-spin text-primary" />
                   </div>
                 ) : sizes.length > 0 ? (
                   <div className="rounded-md border">
                     <Table>
                       <TableHeader className="bg-gray-100">
                         <TableRow>
-                          <TableHead className="w-[30%]">Size</TableHead>
-                          <TableHead className="w-[70%]">Description</TableHead>
+                          <TableHead className="w-[25%]">Size</TableHead>
+                          <TableHead className="w-[60%]">Description</TableHead>
+                          <TableHead className="w-[15%] text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -152,6 +214,21 @@ export default function ShoeSizesPage() {
                           <TableRow key={size.id}>
                             <TableCell className="font-medium">{size.size}</TableCell>
                             <TableCell>{size.description || '-'}</TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => openDeleteDialog(size.id)}
+                                disabled={deletingId === size.id}
+                              >
+                                {deletingId === size.id ? (
+                                  <RefreshCw className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
+                                <span className="ml-2">Delete</span>
+                              </Button>
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -166,6 +243,7 @@ export default function ShoeSizesPage() {
                       onClick={fetchSizes}
                       disabled={isLoading}
                     >
+                      <RefreshCw className="mr-2 h-4 w-4" />
                       Refresh
                     </Button>
                   </div>
