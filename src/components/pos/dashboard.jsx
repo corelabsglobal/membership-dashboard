@@ -128,14 +128,15 @@ export function PosDashboard() {
               {todaySessions.map((session) => {
                 const originalAmount = session.payments?.amount ?? session.amount_paid
                 const currentAmount = session.payments?.modified_amount ?? originalAmount
-                const isModified = session.payments?.modified_amount !== undefined && 
-                                 session.payments?.modified_amount !== originalAmount
+                const hasBeenModified = session.payments?.modified_amount !== undefined && 
+                                      session.payments?.modified_amount !== null &&
+                                      session.payments?.modified_amount !== originalAmount
 
                 return (
                   <TableRow key={session.id}>
                     <TableCell>
                       {session.walkin_customers?.first_name} {session.walkin_customers?.last_name}
-                      {isModified && (
+                      {hasBeenModified && (
                         <span className="ml-2 text-yellow-600 flex items-center gap-1">
                           <AlertTriangle size={14} />
                           <span className="text-xs">Modified</span>
@@ -153,7 +154,7 @@ export function PosDashboard() {
                     <TableCell className="text-right">
                       <div className="flex flex-col">
                         <span>₵{currentAmount.toFixed(2)}</span>
-                        {isModified && (
+                        {hasBeenModified && (
                           <span className="text-xs line-through text-gray-500">
                             ₵{originalAmount.toFixed(2)}
                           </span>
