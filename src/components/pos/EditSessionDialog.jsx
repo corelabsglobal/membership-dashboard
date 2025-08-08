@@ -4,14 +4,12 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { useToast } from '@/components/ui/use-toast'
+import toast from 'react-hot-toast'
 import { supabase } from '@/lib/supabase'
 import { Textarea } from '@/components/ui/textarea'
 
 export function EditSessionDialog({ open, onOpenChange, session, onSuccess }) {
-  const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [reason, setReason] = useState('')
   const [amount, setAmount] = useState(session.payments?.modified_amount || session.amount_paid)
@@ -63,11 +61,7 @@ export function EditSessionDialog({ open, onOpenChange, session, onSuccess }) {
         if (sessionError) throw sessionError
       }
 
-      toast({
-        title: "Session updated successfully",
-        description: "The changes have been recorded",
-        variant: "default"
-      })
+      toast.success("Session updated successfully, The changes have been recorded")
 
       // Return the updated session data
       onSuccess({
@@ -82,11 +76,7 @@ export function EditSessionDialog({ open, onOpenChange, session, onSuccess }) {
         }]
       })
     } catch (error) {
-      toast({
-        title: "Error updating session",
-        description: error.message,
-        variant: "destructive"
-      })
+      toast.error('Error updating session')
     } finally {
       setIsLoading(false)
     }
