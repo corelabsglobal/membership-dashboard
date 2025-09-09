@@ -2,10 +2,10 @@
 
 import { Bell, Search, User, Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
 
 export function Topbar({ toggleSidebar }) {
   const router = useRouter()
@@ -14,11 +14,29 @@ export function Topbar({ toggleSidebar }) {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession()
-      console.log(session)
       setIsAuthenticated(!!session)
     }
     checkAuth()
   }, [])
+
+  const handleUserAction = async () => {
+    if (isAuthenticated) {
+      // Log out the user
+      try {
+        const { error } = await supabase.auth.signOut()
+        if (error) throw error
+        
+        setIsAuthenticated(false)
+        toast.success('Logged out successfully!')
+        router.push('/login')
+      } catch (error) {
+        toast.error(error.message || 'Logout failed. Please try again.')
+      }
+    } else {
+      // Redirect to login page
+      router.push('/login')
+    }
+  }
 
   return (
     <header className="sticky top-0 z-10 bg-card shadow-sm">
@@ -49,7 +67,7 @@ export function Topbar({ toggleSidebar }) {
             variant="ghost"
             size="icon"
             className="rounded-full cursor-pointer"
-            onClick={() => router.push(isAuthenticated ? '/dashboard' : '/login')}
+            onClick={handleUserAction}
           >
             <User className="w-5 h-5" />
           </Button>
