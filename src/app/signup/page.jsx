@@ -83,7 +83,7 @@ export default function SignupPage() {
             Create Your Account
           </CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4">
+        {/*<CardContent className="grid gap-4">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -157,7 +157,7 @@ export default function SignupPage() {
             <FaSignInAlt className="mr-2 h-4 w-4" />
             Sign In
           </Button>
-        </CardContent>
+        </CardContent>*/}
       </Card>
     </div>
   )

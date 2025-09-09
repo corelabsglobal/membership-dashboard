@@ -123,14 +123,14 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <Button 
+          {/*<Button 
             variant="outline" 
             className="w-full" 
             onClick={() => router.push('/signup')}
           >
             <FaUserPlus className="mr-2 h-4 w-4" />
             Sign Up
-          </Button>
+          </Button>*/}
         </CardContent>
       </Card>
     </div>
