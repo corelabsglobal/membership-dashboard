@@ -171,6 +171,7 @@ export function NewMemberForm() {
       if (formData.plan_id) {
         const plan = plans.find(p => p.id == formData.plan_id)
         endDate = new Date(new Date(date).setDate(date.getDate() + (plan.duration_days || 0)))
+        console.log("End Date:", endDate)
 
         const { data: subscription, error: subError } = await supabase
           .from('subscriptions')
