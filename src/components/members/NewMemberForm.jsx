@@ -165,21 +165,28 @@ export function NewMemberForm() {
       if (memberError) throw memberError
 
       let subscriptionId = null
+      let endDate = null
 
       // 2. Create subscription if plan selected
       if (formData.plan_id) {
         const plan = plans.find(p => p.id == formData.plan_id)
-        const endDate = new Date(new Date(date).setDate(date.getDate() + (plan.duration_days || 0)))
+        endDate = new Date(new Date(date).setDate(date.getDate() + (plan.duration_days || 0)))
 
         const { data: subscription, error: subError } = await supabase
           .from('subscriptions')
           .insert([{
             member_id: member.id,
             plan_id: formData.plan_id,
+            //plan_name: plan.name,
+            //plan_price: plan.price,
+            //plan_duration_days: plan.duration_days,
+            //plan_session_count: plan.session_count,
+            //is_unlimited_duration: plan.is_unlimited_duration,
+            //is_unlimited_sessions: plan.is_unlimited_sessions,
             start_date: date.toISOString(),
             end_date: endDate?.toISOString(),
             remaining_sessions: plan.is_unlimited_sessions ? 9999 : plan.session_count,
-            is_active: true
+            is_active: true,
           }])
           .select()
           .single()
@@ -216,7 +223,7 @@ export function NewMemberForm() {
               email: formData.email,
               planName: selectedPlan?.name || null,
               startDate: date.toISOString(),
-              endDate: selectedPlan?.is_unlimited_sessions ? null : endDate?.toISOString() || null
+              endDate: selectedPlan?.is_unlimited_sessions ? null : endDate?.toISOString()
             })
           })
 
